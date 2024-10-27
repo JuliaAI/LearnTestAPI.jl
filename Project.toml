@@ -1,0 +1,31 @@
+name = "LearnTestAPI"
+uuid = "3111ed91-c4f2-40e7-bb19-7f6c618409b8"
+authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+LearnAPI = "92ad9a40-7767-427a-9ee6-6e577f1266cb"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+InteractiveUtils = "<0.0.1, 1"
+LearnAPI = "0.1.0"
+MLUtils = "0.4"
+Serialization = "<0.0.1, 1"
+StableRNGs = "1"
+julia = "1.10"
+
+[extras]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+
+[targets]
+test = ["DataFrames", "Distributions", "Random", "LinearAlgebra", "Statistics", "Tables"]
