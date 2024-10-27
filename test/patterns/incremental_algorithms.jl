@@ -1,6 +1,7 @@
 using LearnAPI
 using Statistics
 using StableRNGs
+using LearnTestAPI
 
 import Distributions
 
@@ -107,11 +108,14 @@ LearnAPI.extras(model::NormalEstimatorFitted) = (μ=model.ȳ, σ=sqrt(model.ss/
 
 # ## Tests
 
+rng = StableRNG(123)
+y = rand(rng, 50);
+ynew = rand(rng, 10);
+
+learner = NormalEstimator()
+@testapi learner y verbosity=0
+
 @testset "NormalEstimator" begin
-    rng = StableRNG(123)
-    y = rand(rng, 50);
-    ynew = rand(rng, 10);
-    learner = NormalEstimator()
     model = fit(learner, y)
     d = predict(model)
     μ, σ = Distributions.params(d)

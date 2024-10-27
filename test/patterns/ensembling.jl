@@ -6,6 +6,7 @@ import DataFrames
 using Random
 using Statistics
 using StableRNGs
+using LearnTestAPI
 
 # # ENSEMBLE OF REGRESSORS (A MODEL WRAPPER)
 
@@ -14,9 +15,8 @@ using StableRNGs
 # but sampled with replacement). In particular this learner has an iteration parameter
 # `n`, and we implement `update` to execute a warm restarts when `n` increases.
 
-# no docstring here - that goes with the constructor; some fields left abstract for
-# simplicity
-#
+# ## Implementation
+
 struct Ensemble
     atom # the base regressor being bagged
     rng
@@ -137,7 +137,7 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
     model.learner,
     model.atom,
     model.rng,
-    LearnAPI.strip.(Ref(model.atom), models),
+    LearnAPI.strip.(model.models),
 )
 
 # learner traits (note the inclusion of `iteration_parameter`):
@@ -147,7 +147,7 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
     iteration_parameter = :n,
     is_composite = true,
     kinds_of_proxy = (Point(),),
-    tags = ("regression", "ensemble algorithms", "iterative models"),
+    tags = ("regression", "ensemble algorithms", "iterative algorithms"),
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
@@ -166,6 +166,7 @@ LearnAPI.fit(learner::Ensemble, X, y, extras...; kwargs...) =
 LearnAPI.update(learner::EnsembleFitted, X, y, extras...; kwargs...) =
     update(learner, (X, y, extras...); kwargs...)
 
+# ## Tests
 
 # synthetic test data:
 N = 10 # number of observations
@@ -179,12 +180,13 @@ data = (X, y)
 Xtrain = Tables.subset(X, train)
 Xtest = Tables.subset(X, test)
 
+rng = StableRNG(123)
+atom = Ridge()
+learner = Ensemble(atom; n=4, rng)
+@testapi learner data verbosity=0
+
 @testset "test an implementation of bagged ensemble of ridge regressors" begin
-    rng = StableRNG(123)
-    atom = Ridge()
-    learner = Ensemble(atom; n=4, rng)
     @test LearnAPI.clone(learner) == learner
-    @test :(LearnAPI.obs) in LearnAPI.functions(learner)
     @test LearnAPI.target(learner, data) == y
     @test LearnAPI.features(learner, data) == X
 
@@ -192,9 +194,6 @@ Xtest = Tables.subset(X, test)
         (:info, r"Trained 4 ridge"),
         fit(learner, Xtrain, y[train]; verbosity=1),
     );
-
-    ŷ4 = predict(model, Point(), Xtest)
-    @test ŷ4 == predict(model, Xtest)
 
     # add 3 atomic models to the ensemble:
     model = update(model, Xtrain, y[train]; verbosity=0, n=7);

@@ -3,7 +3,7 @@ using LinearAlgebra
 using Tables
 import MLUtils
 import DataFrames
-
+using LearnTestAPI
 
 # # NAIVE RIDGE REGRESSION WITH NO INTERCEPTS
 
@@ -137,8 +137,10 @@ X = DataFrames.DataFrame(X)
 y = 2a - b + 3c + 0.05*rand(n)
 data = (X, y)
 
+learner = Ridge(lambda=0.5)
+@testapi learner data verbosity=0
+
 @testset "test an implementation of ridge regression" begin
-    learner = Ridge(lambda=0.5)
     @test :(LearnAPI.obs) in LearnAPI.functions(learner)
 
     @test LearnAPI.target(learner, data) == y

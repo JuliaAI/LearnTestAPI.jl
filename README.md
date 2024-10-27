@@ -29,9 +29,4 @@ data = (X, y)
 @testapi learner data verbosity=1
 ```
 
-Once tests pass, you can set `verbosity=0` to quiten the test logging. 
-
-You will need to ensure these package modules are included as dependencies or test
-dependencies in your package project: LearnAPI, MLUtils, Serialization, StableRNGs.
-
-See the [documentation](https://juliaai.github.io/LearnTestAPI.jl/dev) for details. 
+Once tests pass, you can set `verbosity=0` to suppress the detailed logging. 

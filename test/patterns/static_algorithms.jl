@@ -1,10 +1,13 @@
 using LearnAPI
+using LearnTestAPI
 using Tables
 import MLUtils
 import DataFrames
 
 
 # # TRANSFORMER TO SELECT SOME FEATURES (COLUMNS) OF A TABLE
+
+# ## Implementation
 
 # See later for a variation that stores the names of rejected features in the model
 # object, for inspection by an accessor function.
@@ -50,12 +53,14 @@ end
     ),
 )
 
+# ## Tests
+
+learner = Selector(names=[:x, :w])
+X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
+@testapi learner X verbosity=0
+
 @testset "test a static transformer" begin
-    learner = Selector(names=[:x, :w])
-    X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
     model = fit(learner) # no data arguments!
-    # if provided, data is ignored:
-    @test LearnAPI.learner(model) == learner
     W = transform(model, X)
     @test W == DataFrames.DataFrame(Tables.matrix(X)[:,[1,4]], [:x, :w])
     @test W == transform(learner, X)
@@ -63,6 +68,8 @@ end
 
 
 # # FEATURE SELECTOR THAT REPORTS BYPRODUCTS OF SELECTION PROCESS
+
+# ## Implememtation
 
 # This a variation of `Selector` above that stores the names of rejected features in the
 # output of `fit`, for inspection by an accessor function called `rejected`.
@@ -132,12 +139,15 @@ end
     )
 )
 
+# ## Tests
+
+learner = FancySelector(names=[:x, :w])
+X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
+@testapi learner X verbosity=0
+
 @testset "test a variation that reports byproducts" begin
-    learner = FancySelector(names=[:x, :w])
-    X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
     model = fit(learner) # no data arguments!
     @test !isdefined(model, :reject)
-    @test LearnAPI.learner(model) == learner
     filtered =  DataFrames.DataFrame(Tables.matrix(X)[:,[1,4]], [:x, :w])
     @test transform(model, X) == filtered
     @test transform(learner, X) == filtered

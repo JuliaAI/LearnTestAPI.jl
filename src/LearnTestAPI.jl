@@ -5,7 +5,9 @@ import Test
 import Serialization
 import MLUtils
 import StableRNGs
+import InteractiveUtils
 
+export @testapi
 
 # # LOGGING
 
@@ -13,11 +15,10 @@ ERR_UNSUPPORTED_KWARG(arg) = ArgumentError(
     "Got unsupported keyword argument `$arg`. "
 )
 
-const INFO_LOUD = "Run `LearnAPI.@testapi(learner, data..., verbosity=0)` for "*
-    "silent API tests."
+const INFO_LOUD = "Specify `verbosity=0` for silent @testapi execution. "
 
-const INFO_QUIET = "Run `LearnAPI.@testapi(learner, data..., verbosity=1)` to debug "*
-    "an API test."
+const INFO_QUIET = "Specify `verbosity=1` to debug a @testapi call. "
+
 
 const INFO_CONSTRUCTOR = """
 
@@ -41,13 +42,13 @@ const WARN_DOCUMENTATION = """
 const INFO_FUNCTIONS = """
 
     Testing that `LearnAPI.functions(learner)` includes the obligatory functions.  Run
-    `??LearnAPI.functions` for requirements.
+    `??LearnAPI.functions` for details on requirements.
 
     """
 const INFO_TAGS = """
 
     Testing that `LearnAPI.tags(learner)` has correct form. Run `??LearnAPI.tags` for
-    requirements.
+    details on requirements.
 
     """
 const INFO_KINDS_OF_PROXY = """
@@ -78,14 +79,14 @@ const INFO_LEARNER = """
     """
 const INFO_FUNCTIONS2 = """
 
-    Check for overloaded functions missing from `LearnAPI.functions(learner)`.  Run
+    Checking for overloaded functions missing from `LearnAPI.functions(learner)`.  Run
     `??LearnAPI.functions` for a checklist.
 
     """
 const INFO_FEATURES = """
 
     Attemting to call `LearnAPI.features(learner, data)`. Run `??LearnAPI.features` for
-    requirements.
+    details on requirements.
 
     """
 const INFO_PREDICT_HAS_NO_FEATURES = """
@@ -113,7 +114,7 @@ const INFO_STRIP2 = """
 
     Checking that `predict` or `transform` can be applied to `model` after it is stripped,
     serialized and deserialized, with no change in outcomes. Run `??LearnAPI.strip` for
-    requirements.
+    details on requirements.
 
     """
 
@@ -175,18 +176,8 @@ end
 Test that `learner` correctly implements the LearnAPI.jl interface, by checking
 contracts using one or more data sets.
 
-While the `import` commands in the example below are redundant, the packages providing the
-imported modules must be available in the active package environment. In particular, if
-you run `@testapi` in a package test suite, then add the modules to your package's
-Project.toml file, under the `[extras]` and `[targets]` headings.
-
 ```julia
 using LearnTestAPI
-import LearnAPI       # these imports can be omitted
-import Test
-import Serialization
-import MLUtils
-import StableRNGs
 
 X = (
     feautre1 = [1, 2, 3],
@@ -225,138 +216,129 @@ macro testapi(learner, data...)
         verbosity > -1 && @info INFO_QUIET
     end
 
-    # Because they are not in the LearnAPI scope, macro hygienist will expand "Test" to
-    # "LearnAPI.Test", etc. So we need a workaround:
-    test = :Test
-    MLUtils = :MLUtils
-    Serialization = :Serialization
-    t = data[1]
-
     quote
         import Test
         import Serialization
         import MLUtils
         import LearnAPI
-        import Example
-
-        # if $loud
-        #     log(message) = @info message
-        # else
-        #     log(message) = nothing
-        # end
+        import InteractiveUtils
 
         learner = $(esc(learner))
-        print(learner)
         _human_name = LearnAPI.human_name(learner)
-        $(esc(t)).@test true
+
+        if $loud
+            log(message) = @info "@testapi - $_human_name "*message
+        else
+            log(message) = nothing
+        end
 
 
-#        Test.@testset "Implementation of LearnAPI.jl for $_human_name" begin
+        Test.@testset "Implementation of LearnAPI.jl for $_human_name" begin
 
-    #         log($(LearnAPI.INFO_CONSTRUCTOR))
-    #         Test.@test LearnAPI.clone(learner) == learner
+            log($INFO_CONSTRUCTOR)
+            Test.@test LearnAPI.clone(learner) == learner
 
-    #         if !LearnAPI.is_composite(learner)
-    #             log($(LearnAPI.INFO_IS_COMPOSITE))
-    #             @test all(propertynames(learner)) do name
-    #                 !LearnAPI.is_learner(getproperty(learner, name))
-    #             end
-    #         end
+            if !LearnAPI.is_composite(learner)
+                log($INFO_IS_COMPOSITE)
+                Test.@test all(propertynames(learner)) do name
+                    !LearnAPI.is_learner(getproperty(learner, name))
+                end
+            end
 
-    #         docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
-    #         occursin("No documentation found", docstring) &&
-    #             @warn $(LearnAPI.WARN_DOCUMENTATION)
+            docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
+            occursin("No documentation found", docstring) &&
+                @warn "@testapi - $_human_name "*$WARN_DOCUMENTATION
 
-    #         _functions = LearnAPI.functions(learner)
+            _functions = LearnAPI.functions(learner)
 
-    #         log($(LearnAPI.INFO_FUNCTIONS))
-    #         Test.@test issubset(
-    #             (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
-    #             _functions,
-    #         )
+            log($INFO_FUNCTIONS)
+            Test.@test issubset(
+                (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
+                _functions,
+            )
 
-    #         log($(LearnAPI.INFO_TAGS))
-    #         _tags = LearnAPI.tags(learner)
-    #         Test.@test _tags isa Tuple
-    #         Test.@test issubset(
-    #             _tags,
-    #             LearnAPI.tags(),
-    #         )
-    #         Test.@test issubset(
-    #             (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
-    #             _functions,
-    #         )
+            log($INFO_TAGS)
+            _tags = LearnAPI.tags(learner)
+            Test.@test _tags isa Tuple
+            Test.@test issubset(
+                _tags,
+                LearnAPI.tags(),
+            )
+            Test.@test issubset(
+                (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
+                _functions,
+            )
 
-    #         if :(LearnAPI.predict) in _functions
-    #             _kinds_of_proxy = LearnAPI.kinds_of_proxy(learner)
-    #             log($(LearnAPI.INFO_KINDS_OF_PROXY))
-    #             Test.@test !isempty(_kinds_of_proxy)
-    #             Test.@test _kinds_of_proxy isa Tuple
-    #             Test.@test all(_kinds_of_proxy) do k
-    #                 k isa LearnAPI.KindOfProxy
-    #             end
-    #         end
+            if :(LearnAPI.predict) in _functions
+                _kinds_of_proxy = LearnAPI.kinds_of_proxy(learner)
+                log($INFO_KINDS_OF_PROXY)
+                Test.@test !isempty(_kinds_of_proxy)
+                Test.@test _kinds_of_proxy isa Tuple
+                Test.@test all(_kinds_of_proxy) do k
+                    k isa LearnAPI.KindOfProxy
+                end
+            end
 
-    #         _is_static = LearnAPI.is_static(learner)
+            _is_static = LearnAPI.is_static(learner)
 
-    #         for (i, data) in enumerate([$(data...)])
+            for (i, data) in enumerate([$(esc.(data)...)])
 
-    #             dataset = " Dataset #$i: "
-    #             if _is_static
-    #                 log(dataset*$(LearnAPI.INFO_FIT_IS_STATIC))
-    #                 model = LearnAPI.fit(learner)
-    #             else
-    #                 log(dataset*$(LearnAPI.INFO_FIT_IS_NOT_STATIC))
-    #                 model = LearnAPI.fit(learner, data)
-    #             end
+                dataset = "- dataset #$i"
+                if _is_static
+                    log(dataset*$INFO_FIT_IS_STATIC)
+                    model = LearnAPI.fit(learner)
+                else
+                    log(dataset*$INFO_FIT_IS_NOT_STATIC)
+                    model = LearnAPI.fit(learner, data)
+                end
 
-    #             log(dataset*$(LearnAPI.INFO_LEARNER))
-    #             Test.@test LearnAPI.learner(model) == learner
-    #             Test.@test LearnAPI.learner(LearnAPI.strip(model)) == learner
+                log(dataset*$INFO_LEARNER)
+                Test.@test LearnAPI.learner(model) == learner
+                Test.@test LearnAPI.learner(LearnAPI.strip(model)) == learner
 
-    #             implemented_methods = map(
-    #                 vcat(
-    #                     methodswith(typeof(learner), LearnAPI),
-    #                     methodswith(typeof(model), LearnAPI),
-    #                 )) do f
-    #                     name = getfield(f, :name)
-    #                     Meta.parse("LearnAPI.$name")
-    #                 end |> unique
+                implemented_methods = map(
+                    vcat(
+                        InteractiveUtils.methodswith(typeof(learner), LearnAPI),
+                        InteractiveUtils.methodswith(typeof(model), LearnAPI),
+                    )) do f
+                        name = getfield(f, :name)
+                        Meta.parse("LearnAPI.$name")
+                    end |> unique
 
-    #             implemented_methods =
-    #                 intersect(implemented_methods, LearnAPI.functions())
+                implemented_methods =
+                    intersect(implemented_methods, LearnAPI.functions())
 
-    #             log(dataset*$(LearnAPI.INFO_FUNCTIONS2))
-    #             Test.@test all(f -> f in _functions, implemented_methods)
+                log(dataset*$INFO_FUNCTIONS2)
+                Test.@test all(f -> f in _functions, implemented_methods)
 
-    #             log(dataset*$(LearnAPI.INFO_FEATURES))
-    #             X = LearnAPI.features(learner, data)
+                log(dataset*$INFO_FEATURES)
+                X = LearnAPI.features(learner, data)
 
-    #             if :(LearnAPI.predict) in _functions
-    #                 # get data argument for `predict`:
-    #                 if isnothing(X)
-    #                     args = ()
-    #                     log(dataset*$(LearnAPI.INFO_PREDICT_HAS_NO_FEATURES))
-    #                 else
-    #                     args = (X,)
-    #                     log(dataset*$(LearnAPI.INFO_PREDICT_HAS_FEATURES))
-    #                 end
-    #                 [LearnAPI.predict(model, k, args...) for k in _kinds_of_proxy]
-    #                 yhat = LearnAPI.predict(model, args...)
+                if :(LearnAPI.predict) in _functions
+                    # get data argument for `predict`:
+                    if isnothing(X)
+                        args = ()
+                        log(dataset*$INFO_PREDICT_HAS_NO_FEATURES)
+                    else
+                        args = (X,)
+                        log(dataset*$INFO_PREDICT_HAS_FEATURES)
+                    end
+                    [LearnAPI.predict(model, k, args...) for k in _kinds_of_proxy]
+                    yhat = LearnAPI.predict(model, args...)
 
-    #                 log(dataset*$(LearnAPI.INFO_STRIP))
-    #                 Test.@test LearnAPI.predict(LearnAPI.strip(model), args...) == yhat
+                    log(dataset*$INFO_STRIP)
+                    Test.@test LearnAPI.predict(LearnAPI.strip(model), args...) == yhat
 
-    #                 log(dataset*$(LearnAPI.INFO_STRIP2))
-    #                 small_model = LearnAPI.strip(model)
-    #                 io = IOBuffer()
-    #                 Serialization.serialize(io, small_model)
-    #                 seekstart(io)
-    #                 model2 = Serialization.deserialize(io)
-    #                 Test.@test LearnAPI.predict(model2, args...) == yhat
-    #             end
-    #         end
-    #    end
+                    log(dataset*$INFO_STRIP2)
+                    small_model = LearnAPI.strip(model)
+                    io = IOBuffer()
+                    Serialization.serialize(io, small_model)
+                    seekstart(io)
+                    model2 = Serialization.deserialize(io)
+                    Test.@test LearnAPI.predict(model2, args...) == yhat
+                end
+            end
+        end
     end
 end
 
