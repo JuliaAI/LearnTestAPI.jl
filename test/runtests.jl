@@ -6,6 +6,7 @@ test_files = [
     "patterns/ensembling.jl",
 #    "patterns/gradient_descent.jl",
     "patterns/incremental_algorithms.jl",
+    "patterns/dimension_reduction.jl",
 ]
 
 files = isempty(ARGS) ? test_files : ARGS

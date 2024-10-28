@@ -1,11 +1,14 @@
 using LearnAPI
 using LinearAlgebra
-using Tables
-import MLUtils
-import DataFrames
 using Random
 using Statistics
+
+# for testing:
+using Test
+import MLUtils
+import DataFrames
 using StableRNGs
+using Tables
 using LearnTestAPI
 
 # # ENSEMBLE OF REGRESSORS (A MODEL WRAPPER)

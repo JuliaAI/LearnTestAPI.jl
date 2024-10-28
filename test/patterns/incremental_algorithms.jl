@@ -49,7 +49,7 @@ end
 
 LearnAPI.learner(::NormalEstimatorFitted) = NormalEstimator()
 
-function LearnAPI.fit(::NormalEstimator, y)
+function LearnAPI.fit(::NormalEstimator, y; verbosity=1)
     n = length(y)
     Σy = sum(y)
     ȳ = Σy/n
@@ -57,7 +57,7 @@ function LearnAPI.fit(::NormalEstimator, y)
     return NormalEstimatorFitted(Σy, ȳ, ss, n)
 end
 
-function LearnAPI.update_observations(model::NormalEstimatorFitted, ynew)
+function LearnAPI.update_observations(model::NormalEstimatorFitted, ynew; verbosity=1)
     m = length(ynew)
     n = model.n + m
     Σynew = sum(ynew)

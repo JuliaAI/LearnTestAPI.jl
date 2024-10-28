@@ -15,10 +15,9 @@ ERR_UNSUPPORTED_KWARG(arg) = ArgumentError(
     "Got unsupported keyword argument `$arg`. "
 )
 
-const INFO_LOUD = "Specify `verbosity=0` for silent @testapi execution. "
+const INFO_LOUD = "- specify `verbosity=0` for silent testing. "
 
-const INFO_QUIET = "Specify `verbosity=1` to debug a @testapi call. "
-
+const INFO_QUIET = "- specify `verbosity=1` if debugging. "
 
 const INFO_CONSTRUCTOR = """
 
@@ -41,40 +40,38 @@ const WARN_DOCUMENTATION = """
     """
 const INFO_FUNCTIONS = """
 
-    Testing that `LearnAPI.functions(learner)` includes the obligatory functions.  Run
-    `??LearnAPI.functions` for details on requirements.
+    Testing that `LearnAPI.functions(learner)` includes the obligatory functions.
 
     """
 const INFO_TAGS = """
 
-    Testing that `LearnAPI.tags(learner)` has correct form. Run `??LearnAPI.tags` for
-    details on requirements.
+    Testing that `LearnAPI.tags(learner)` has correct form. List allowed tags with
+    `LearnAPII.tags()`.
 
     """
 const INFO_KINDS_OF_PROXY = """
 
     Testing that `LearnAPI.kinds_of_proxy(learner)` is overloaded and has valid form.
-    [Reference](https://juliaai.github.io/LearnAPI.jl/dev/kinds_of_target_proxy/). See also
-    the `LearnAPI.predict` docstring.
+    [Reference](https://juliaai.github.io/LearnAPI.jl/dev/kinds_of_target_proxy/). List
+    allowed kinds of proxy with `LearnAPI.kinds_of_proxy()`.
 
     """
 const INFO_FIT_IS_STATIC = """
 
     `LearnAPI.is_static(learner)` is `true`. Therefore attempting to call
-    `fit(learner)`. Run `??LearnAPI.fit` for details.
+    `fit(learner)`.
 
     """
 const INFO_FIT_IS_NOT_STATIC = """
 
     `LearnAPI.is_static(learner)` is `false`. Therefore attempting to call
-    `fit(learner, data)`. Run `??LearnAPI.fit` for details.
+    `fit(learner, data)`.
 
     """
 const INFO_LEARNER = """
 
     Attempting to call `LearnAPI.strip(model)` and to check that applying
-    `LearnAPI.learner` to the result or to `model` returns `learner` in both cases. Run
-    `??LearnAPI.learner` for details.
+    `LearnAPI.learner` to the result or to `model` returns `learner` in both cases.
 
     """
 const INFO_FUNCTIONS2 = """
@@ -85,23 +82,25 @@ const INFO_FUNCTIONS2 = """
     """
 const INFO_FEATURES = """
 
-    Attemting to call `LearnAPI.features(learner, data)`. Run `??LearnAPI.features` for
-    details on requirements.
+    Attempting to call `LearnAPI.features(learner, data)`.
+
+    """
+const INFO_SERIALIZATION = """
+
+    Checking that `LearnAPI.strip(model)` can be Julia-serialized.
 
     """
 const INFO_PREDICT_HAS_NO_FEATURES = """
 
     Since `LearnAPI.features(learner, data) == nothing`, we are attempting to call
-    `predict(learner, kind)` for each `kind` in `LearnAPI.kinds_of_proxy(learner)`. Run
-    `??LearnAPI.predict` and `??LearnAPI.kinds_of_proxy` for context.
+    `predict(model, kind)` for each `kind` in `LearnAPI.kinds_of_proxy(learner)`.
 
     """
 const INFO_PREDICT_HAS_FEATURES = """
 
     Since `X = LearnAPI.features(learner, data)` is not `nothing`, we are attempting to
-    call `predict(learner, kind, X)` for each `kind` in
-    `LearnAPI.kinds_of_proxy(learner)`. Run `??LearnAPI.predict` and
-    `??LearnAPI.kinds_of_proxy` for context.
+    call `predict(model, kind, X)` for each `kind` in
+    `LearnAPI.kinds_of_proxy(learner)`.
 
     """
 const INFO_STRIP = """
@@ -112,12 +111,64 @@ const INFO_STRIP = """
     """
 const INFO_STRIP2 = """
 
-    Checking that `predict` or `transform` can be applied to `model` after it is stripped,
-    serialized and deserialized, with no change in outcomes. Run `??LearnAPI.strip` for
-    details on requirements.
+    Checking that `predict(model, X)` can be called on the deserialized version of `model`
+    without a change in return value.
 
     """
+const INFO_OBS_AND_PREDICT = """
 
+    Testing that replacing `X` in `predict(learner, kind, X)` with `obs(model, X)` gives
+    the same output, for each supported `kind` of proxy.
+
+    """
+const INFO_TRANSFORM_HAS_NO_FEATURES = """
+
+    Since `LearnAPI.features(learner, data) == nothing`, we are attempting to call
+    `transform(model)`.
+
+    """
+const INFO_TRANSFORM_HAS_FEATURES = """
+
+    Since `X = LearnAPI.features(learner, data)` is not `nothing`, we are attempting to
+    call `transform(model, X)`.
+
+    """
+const INFO_STRIP_TRANSFORM = """
+
+    Checking that `transform(model, X)` gives the same answer if we replace `model` with
+    `LearnAPI.strip(model)`.
+
+    """
+const INFO_STRIP2_TRANSFORM = """
+
+    Checking that `transform(model, X)` can be called using the deserialized version of
+    `model` without a change in return value.
+
+    """
+const INFO_OBS_AND_TRANSFORM = """
+
+    Testing that replacing `X` in `transform(learner, X)` with `obs(model, X)` gives the
+    same output.
+
+    """
+const INFO_INVERSE_TRANSFORM = """
+
+    Testing that `inverse_transform(model, W)` executes, where `W` is the output of
+    `transform(model, X)` and `X = LearnAPI.features(learner, data)`.
+
+    """
+const INFO_STRIP_INVERSE = """
+
+    Checking that `inverse_transform(model, X)` gives the same answer if we replace
+    `model` with `LearnAPI.strip(model)`.
+
+    """
+const INFO_STRIP2_INVERSE = """
+
+    Checking that `inverse_transform(model, X)` can be called using the deserialized
+    version of `model` without a change in return value.
+
+    """
 
 
 const INFO_KINDS_OF_PROXY2 = """
@@ -188,7 +239,32 @@ X = (
 @testapi MyFeatureSelector(; features=[:feature3,]) X verbosity=1
 ```
 
+LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
+version 0.2.3 will generally support LearnAPI.jl versions 0.2.*.
+
+!!! warning
+
+    New releases of LearnTestAPI.jl may add tests, and this may result in new test fails
+    in client package test suites. However, adding a test to LearnTestAPI.jl is not
+    considered a breaking change, unless the addition supports a breaking release of
+    LearnAPI.jl.
+
 # Extended help
+
+# What is and is not tested
+
+When `verbosity=1` (the default) the test log describes all contracts tested.
+
+The following are *not* tested:
+
+- `inverse_transform` is an approximate left or right inverse to `transform` convenience
+
+- `transform(learner, ...)` and `predict(learner, ...)` (the one-line convenience
+  methods that imply `fit`)
+
+Whenever the internal `learner` algorithm involves case distinctions around data or
+hyperparameters, it is recommended that multiple datasets, and learners with a variety of
+hyperparameter settings are explicitly tested.
 
 # Role of datasets in tests
 
@@ -208,13 +284,6 @@ without any data, and `dataset` is passed directly to `fit` and/or `transform`.
 macro testapi(learner, data...)
 
     data, verbosity = filter_out_verbosity(data)
-    if isnothing(verbosity) || verbosity > 0
-        loud = true
-        @info INFO_LOUD
-    else
-        loud = false
-        verbosity > -1 && @info INFO_QUIET
-    end
 
     quote
         import Test
@@ -226,12 +295,19 @@ macro testapi(learner, data...)
         learner = $(esc(learner))
         _human_name = LearnAPI.human_name(learner)
 
-        if $loud
+        # define `log` command and make intial log:
+        if isnothing($verbosity) || $verbosity > 0
+            loud = true
+        else
+            loud = false
+        end
+        if loud
             log(message) = @info "@testapi - $_human_name "*message
+            log($INFO_LOUD)
         else
             log(message) = nothing
+            $verbosity > -1 && @info "@testapi - $_human_name "*$INFO_QUIET
         end
-
 
         Test.@testset "Implementation of LearnAPI.jl for $_human_name" begin
 
@@ -246,7 +322,7 @@ macro testapi(learner, data...)
             end
 
             docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
-            occursin("No documentation found", docstring) &&
+            occursin("No documentation found", docstring) && $verbosity > -1 &&
                 @warn "@testapi - $_human_name "*$WARN_DOCUMENTATION
 
             _functions = LearnAPI.functions(learner)
@@ -286,10 +362,10 @@ macro testapi(learner, data...)
                 dataset = "- dataset #$i"
                 if _is_static
                     log(dataset*$INFO_FIT_IS_STATIC)
-                    model = LearnAPI.fit(learner)
+                    model = LearnAPI.fit(learner; verbosity=$verbosity-1)
                 else
                     log(dataset*$INFO_FIT_IS_NOT_STATIC)
-                    model = LearnAPI.fit(learner, data)
+                    model = LearnAPI.fit(learner, data; verbosity=$verbosity-1)
                 end
 
                 log(dataset*$INFO_LEARNER)
@@ -314,6 +390,13 @@ macro testapi(learner, data...)
                 log(dataset*$INFO_FEATURES)
                 X = LearnAPI.features(learner, data)
 
+                log(dataset*$INFO_SERIALIZATION)
+                small_model = LearnAPI.strip(model)
+                io = IOBuffer()
+                Serialization.serialize(io, small_model)
+                seekstart(io)
+                model2 = Serialization.deserialize(io)
+
                 if :(LearnAPI.predict) in _functions
                     # get data argument for `predict`:
                     if isnothing(X)
@@ -330,16 +413,54 @@ macro testapi(learner, data...)
                     Test.@test LearnAPI.predict(LearnAPI.strip(model), args...) == yhat
 
                     log(dataset*$INFO_STRIP2)
-                    small_model = LearnAPI.strip(model)
-                    io = IOBuffer()
-                    Serialization.serialize(io, small_model)
-                    seekstart(io)
-                    model2 = Serialization.deserialize(io)
                     Test.@test LearnAPI.predict(model2, args...) == yhat
+
+                    if !isnothing(X)
+                        log(dataset*$INFO_OBS_AND_PREDICT)
+                        Test.@test all(_kinds_of_proxy) do kind
+                            LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) == yhat
+                        end
+                    end
                 end
-            end
-        end
-    end
+
+                if :(LearnAPI.transform) in _functions
+                    # get data argument for `transform`:
+                    if isnothing(X)
+                        args = ()
+                        log(dataset*$INFO_TRANSFORM_HAS_NO_FEATURES)
+                    else
+                        args = (X,)
+                        log(dataset*$INFO_TRANSFORM_HAS_FEATURES)
+                    end
+                    W = LearnAPI.transform(model, args...)
+
+                    log(dataset*$INFO_STRIP_TRANSFORM)
+                    Test.@test LearnAPI.transform(LearnAPI.strip(model), args...) == W
+
+                    log(dataset*$INFO_STRIP2_TRANSFORM)
+                    Test.@test LearnAPI.transform(model2, args...) == W
+
+                    if !isnothing(X)
+                        log(dataset*$INFO_OBS_AND_TRANSFORM)
+                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) == W
+                    end
+                end
+
+                if :(LearnAPI.inverse_transform) in _functions
+                    log(dataset*$INFO_INVERSE_TRANSFORM)
+                    X2 = LearnAPI.inverse_transform(model, W)
+
+                    log(dataset*$INFO_STRIP_INVERSE)
+                    Test.@test LearnAPI.inverse_transform(LearnAPI.strip(model), W) == X2
+
+                    log(dataset*$INFO_STRIP2_INVERSE)
+                    Test.@test LearnAPI.inverse_transform(model2, W) == X2
+                end
+
+            end # for loop over datasets
+        end # @testset
+        $verbosity > 0 && log("- tests finished.")
+    end # quote
 end
 
 end # module

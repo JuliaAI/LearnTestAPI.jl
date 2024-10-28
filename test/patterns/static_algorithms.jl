@@ -1,6 +1,9 @@
 using LearnAPI
-using LearnTestAPI
 using Tables
+
+# for testing:
+using Test
+using LearnTestAPI
 import MLUtils
 import DataFrames
 
@@ -81,7 +84,8 @@ end
 """
     FancySelector(; names=Symbol[])
 
-Instantiate a feature selector that exposes the names of rejected features.
+Instantiate a feature selector that exposes the names of rejected features. Inputs for
+transform are expected to be tables.
 
 ```julia
 learner = FancySelector(names=[:x, :w])

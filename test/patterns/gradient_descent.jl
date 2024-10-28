@@ -1,6 +1,7 @@
 using Pkg
 Pkg.activate("perceptron", shared=true)
 
+using Test
 using LearnAPI
 using Random
 using Statistics
