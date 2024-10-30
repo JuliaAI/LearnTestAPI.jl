@@ -2,36 +2,23 @@
 
 Tool for testing implementations of the
 [LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/) interface, for algorithms in
-machine learning and statistics
+machine learning and statisticsp
 
 [![Build Status](https://github.com/JuliaAI/LearnTestAPI.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/LearnTestAPI.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaAI/LearnTestAPI.jl/graph/badge.svg?token=9IWT9KYINZ)](https://codecov.io/gh/JuliaAI/LearnTestAPI.jl?branch=dev)
 [![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaai.github.io/LearnTestAPI.jl/dev/)
 
-# Quick start
-
-If your package defines an object `learner` implementing the
-[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/) interface, then put something
-like this in your test suite:
+# Code snippet
 
 ```julia
 using LearnTestAPI
+using StableRNGs
 
-# create some test data:
-X = (
-    feature1 = [1, 2, 3],
-    feature2 = ["a", "b", "c"],
-    feature3 = [10.0, 20.0, 30.0],
-)
-y = [1, 2, 3]
-data = (X, y)
-
-# bump verbosity to debug:
-@testapi learner data verbosity=1
+rng=StableRNG(123)
+learner = MyRegressor(; rng)
+X = rand(rng, 3, 100)
+y = rand(rng, 100)
+@testapi learner (X, y) verbosity=1
 ```
 
-Once tests pass, you can set `verbosity=0` to suppress the detailed logging. 
-
-LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
-version 0.2.3 will generally support LearnAPI.jl versions 0.2.*.
- 
+Documentation is [here](https://juliaai.github.io/LearnTestAPI.jl/dev/).

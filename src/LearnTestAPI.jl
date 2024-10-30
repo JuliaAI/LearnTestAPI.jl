@@ -64,8 +64,8 @@ const INFO_FIT_IS_STATIC = """
   """
 const INFO_FIT_IS_NOT_STATIC = """
 
-    `LearnAPI.is_static(learner)` is `false`. Therefore attempting to call
-    `fit(learner, data)`.
+    Attempting to call `fit(learner, data)`. If failing, perhaps you need
+    `LearnAPI.is_static(learner) == true`
 
   """
 const INFO_LEARNER = """
@@ -98,15 +98,14 @@ const INFO_SERIALIZATION = """
   """
 const INFO_PREDICT_HAS_NO_FEATURES = """
 
-    Since `LearnAPI.features(learner, data) == nothing`, we are attempting to call
-    `predict(model, kind)` for each `kind` in `LearnAPI.kinds_of_proxy(learner)`.
+    Attempting to call `predict(model, kind)` for each `kind` in
+    `LearnAPI.kinds_of_proxy(learner)`.
 
   """
 const INFO_PREDICT_HAS_FEATURES = """
 
     Since `X = LearnAPI.features(learner, data)` is not `nothing`, we are attempting to
-    call `predict(model, kind, X)` for each `kind` in
-    `LearnAPI.kinds_of_proxy(learner)`.
+    call `predict(model, kind, X)` for each `kind` in `LearnAPI.kinds_of_proxy(learner)`.
 
   """
 const INFO_STRIP = """
@@ -129,8 +128,7 @@ const INFO_OBS_AND_PREDICT = """
   """
 const INFO_TRANSFORM_HAS_NO_FEATURES = """
 
-    Since `LearnAPI.features(learner, data) == nothing`, we are attempting to call
-    `transform(model)`.
+    Attempting to call `transform(model)`.
 
   """
 const INFO_TRANSFORM_HAS_FEATURES = """
@@ -506,3 +504,34 @@ macro testapi(learner, data...)
 end
 
 end # module
+
+"""
+    LearnTestAPI
+
+Module for testing implementations of the interfacde defined in
+[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/).
+
+If your package defines an object `learner` implementing the interface, then put something
+like this in your test suite:
+
+```julia
+using LearnTestAPI
+
+# create some test data:
+X = ...
+y = ...
+data = (X, y)
+
+# bump verbosity to debug:
+@testapi learner data verbosity=1
+```
+
+Once tests pass, set `verbosity=0` to suppress the detailed logging.
+
+For details and options see [`LearnTestAPI.@testapi`](@ref)
+
+LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
+version 0.2.3 will generally support LearnAPI.jl versions 0.2.*.
+
+"""
+LearnTestAPI

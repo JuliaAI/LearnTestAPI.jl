@@ -4,12 +4,20 @@
 LearnTestAPI.jl</span>
 <br>
 <span style="color: #9558B2;font-size:1.6em;font-style:italic;">
-A base Julia interface for machine learning and statistics </span>
+Tool for testing implementations of
+<a href=https://juliaai.github.io/LearnAPI.jl/dev/ style="text-decoration: underline">LearnAPI.jl</a></span>
 <br>
 <br>
 ```
 
-```docs
+## Quick start
+
+```@docs
 LearnTestAPI
+```
+ 
+# Reference
+
+```@docs
 LearnTestAPI.@testapi
 ```
