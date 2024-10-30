@@ -142,12 +142,14 @@ struct PerceptronClassifierObs
 end
 
 # For pre-processing the training data:
-function LearnAPI.obs(learner::PerceptronClassifier, data::Tuple)
+function LearnAPI.obs(::PerceptronClassifier, data::Tuple)
     X, y = data
     classes = CategoricalDistributions.classes(y)
     y_hot = classes .== permutedims(y) # one-hot encoding
     return PerceptronClassifierObs(X, y_hot, classes)
 end
+LearnAPI.obs(::PerceptronClassifier, observations::PerceptronClassifierObs) =
+    observations # involutivity
 
 # implement `RadomAccess()` interface for output of `obs`:
 Base.length(observations::PerceptronClassifierObs) = length(observations.y)

@@ -31,4 +31,7 @@ data = (X, y)
 ```
 
 Once tests pass, you can set `verbosity=0` to suppress the detailed logging. 
-> 
+
+LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
+version 0.2.3 will generally support LearnAPI.jl versions 0.2.*.
+ 

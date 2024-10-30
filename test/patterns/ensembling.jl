@@ -103,11 +103,11 @@ function LearnAPI.update(model::EnsembleFitted, data; verbosity=1, replacements.
     learner_old = LearnAPI.learner(model)
     learner = LearnAPI.clone(learner_old; replacements...)
 
-    :n in keys(replacements) || return fit(learner, data)
+    :n in keys(replacements) || return fit(learner, data; verbosity)
 
     n = learner.n
     Δn = n - learner_old.n
-    n < 0 && return fit(model, learner)
+    n < 0 && return fit(model, learner; verbosity)
 
     atom = learner.atom
     observations = obs(atom, data)
@@ -150,7 +150,7 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
     iteration_parameter = :n,
     is_composite = true,
     kinds_of_proxy = (Point(),),
-    tags = ("regression", "ensemble algorithms", "iterative algorithms"),
+    tags = ("regression", "ensembling", "iterative algorithms"),
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
@@ -207,7 +207,7 @@ learner = Ensemble(atom; n=4, rng)
     @test ŷ7 ≈ predict(model_cold, Xtest)
 
     # test that we get a cold restart if another hyperparameter is changed:
-    model2 = update(model, Xtrain, y[train]; atom=Ridge(0.05))
+    model2 = update(model, Xtrain, y[train]; atom=Ridge(0.05), verbosity=0)
     learner2 = Ensemble(Ridge(0.05); n=7, rng)
     model_cold = fit(learner2, Xtrain, y[train]; verbosity=0)
     @test predict(model2, Xtest) ≈ predict(model_cold, Xtest)

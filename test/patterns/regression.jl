@@ -52,6 +52,7 @@ function LearnAPI.obs(::Ridge, data)
     names = Tables.columnnames(table) |> collect
     RidgeFitObs(Tables.matrix(table)', names, y)
 end
+LearnAPI.obs(::Ridge, data::RidgeFitObs) = data
 
 # for observations:
 function LearnAPI.fit(learner::Ridge, observations::RidgeFitObs; verbosity=1)
@@ -89,6 +90,7 @@ LearnAPI.features(::Ridge, observations::RidgeFitObs) = observations.A
 
 # observations for consumption by `predict`:
 LearnAPI.obs(::RidgeFitted, X) = Tables.matrix(X)'
+LearnAPI.obs(::RidgeFitted, X::AbstractMatrix) = X
 
 # matrix input:
 LearnAPI.predict(model::RidgeFitted, ::Point, observations::AbstractMatrix) =
@@ -273,9 +275,10 @@ LearnAPI.fit(learner::BabyRidge, X, y; kwargs...) =
 
 # ## Tests
 
-@testset "test a variation  which does not overload LearnAPI.obs" begin
-    learner = BabyRidge(lambda=0.5)
+learner = BabyRidge(lambda=0.5)
+@testapi learner data verbosity=1
 
+@testset "test a variation  which does not overload LearnAPI.obs" begin
     model = fit(learner, Tables.subset(X, train), y[train]; verbosity=0)
     ŷ = predict(model, Point(), Tables.subset(X, test))
     @test ŷ isa Vector{Float64}
