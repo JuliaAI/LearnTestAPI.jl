@@ -1,6 +1,7 @@
 using Test
 
 test_files = [
+    "tools.jl",
     "patterns/static_algorithms.jl",
     "patterns/regression.jl",
     "patterns/ensembling.jl",

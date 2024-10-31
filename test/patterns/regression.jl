@@ -109,6 +109,7 @@ LearnAPI.strip(model::RidgeFitted) =
 @trait(
     Ridge,
     constructor = Ridge,
+    human_name = "ridge regression",
     kinds_of_proxy = (Point(),),
     tags = ("regression",),
     functions = (
@@ -143,7 +144,7 @@ data = (X, y)
 learner = Ridge(lambda=0.5)
 @testapi learner data verbosity=0
 
-@testset "test an implementation of ridge regression" begin
+@testset "extra tests for ridge regression" begin
     @test :(LearnAPI.obs) in LearnAPI.functions(learner)
 
     @test LearnAPI.target(learner, data) == y
@@ -235,7 +236,7 @@ function LearnAPI.fit(learner::BabyRidge, data; verbosity=1)
     coefficients = (A*A' + learner.lambda*I)\(A*y) # vector
 
     feature_importances = nothing
-
+#    feature_importances[1:2]
     return BabyRidgeFitted(learner, coefficients, feature_importances)
 
 end
@@ -276,9 +277,9 @@ LearnAPI.fit(learner::BabyRidge, X, y; kwargs...) =
 # ## Tests
 
 learner = BabyRidge(lambda=0.5)
-@testapi learner data verbosity=1
+@testapi learner data verbosity=0
 
-@testset "test a variation  which does not overload LearnAPI.obs" begin
+@testset "extra tests for baby ridge" begin
     model = fit(learner, Tables.subset(X, train), y[train]; verbosity=0)
     ŷ = predict(model, Point(), Tables.subset(X, test))
     @test ŷ isa Vector{Float64}

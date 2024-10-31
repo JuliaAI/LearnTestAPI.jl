@@ -15,7 +15,18 @@ Tool for testing implementations of
 ```@docs
 LearnTestAPI
 ```
- 
+
+LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
+version 0.2.3 will generally support all LearnAPI.jl versions 0.2.*.
+
+!!! warning
+
+    New releases of LearnTestAPI.jl may add tests to `@testapi`, and this may result in
+    new failures in client package test suites. Nevertheless, adding a test to `@testapi`
+    is not considered a breaking change to LearnTestAPI, unless the addition supports a
+    breaking release of LearnAPI.jl.
+
+
 # Reference
 
 ```@docs

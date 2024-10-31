@@ -1,3 +1,29 @@
+"""
+    LearnTestAPI
+
+Module for testing implementations of the interfacde defined in
+[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/).
+
+If your package defines an object `learner` implementing the interface, then put something
+like this in your test suite:
+
+```julia
+using LearnTestAPI
+
+# create some test data:
+X = ...
+y = ...
+data = (X, y)
+
+# bump verbosity to debug:
+@testapi learner data verbosity=1
+```
+
+Once tests pass, set `verbosity=0` to suppress the detailed logging.
+
+For details and options see [`LearnTestAPI.@testapi`](@ref)
+
+"""
 module LearnTestAPI
 
 import LearnAPI
@@ -6,6 +32,8 @@ import Serialization
 import MLUtils
 import StableRNGs
 import InteractiveUtils
+
+include("tools.jl")
 
 export @testapi
 
@@ -38,9 +66,12 @@ const WARN_DOCUMENTATION = """
     [Reference](https://juliaai.github.io/LearnAPI.jl/dev/reference/#Documentation).
 
   """
+const OBLIGATORY_FUNCTIONS =
+    join(map(ex->"`:$ex`", LearnAPI.functions()[1:4]), ", ", " and ")
 const INFO_FUNCTIONS = """
 
-    Testing that `LearnAPI.functions(learner)` includes the obligatory functions.
+    Testing that `LearnAPI.functions(learner)` includes the obligatory functions,
+    $OBLIGATORY_FUNCTIONS.
 
   """
 const INFO_TAGS = """
@@ -64,8 +95,8 @@ const INFO_FIT_IS_STATIC = """
   """
 const INFO_FIT_IS_NOT_STATIC = """
 
-    Attempting to call `fit(learner, data)`. If failing, perhaps you need
-    `LearnAPI.is_static(learner) == true`
+    Attempting to call `fit(learner, data)`. If you implemented `fit(learner)` instead,
+    then you need to arrange `LearnAPI.is_static(learner) == true`.
 
   """
 const INFO_LEARNER = """
@@ -148,7 +179,7 @@ const INFO_STRIP2_TRANSFORM = """
     Testing  that `transform(model, X)` can be called using the deserialized version of
     `model` without a change in return value.
 
-    """
+  """
 const INFO_OBS_AND_TRANSFORM = """
 
     Testing that replacing `X` in `transform(learner, X)` with `obs(model, X)` gives the
@@ -197,7 +228,7 @@ const INFO_KINDS_OF_PROXY2 = """
 # # METAPROGRAMMING HELPERS
 
 """
-    LearaAPI.verbosity(ex)
+    LearaAPI.verb(ex)
 
 *Private method.*
 
@@ -205,11 +236,11 @@ If `ex` is a specification of `verbosity`, such as `:(verbosity=1)`, then return
 specified value; otherwise, return `nothing`.
 
 """
-verbosity(ex) = nothing
-function verbosity(ex::Expr)
+verb(ex) = nothing
+function verb(ex::Expr)
     if ex.head == :(=)
         ex.args[1] == :verbosity || throw(ERR_UNSUPPORTED_KWARG(ex.args[1]))
-        return ex.args[2] # the actual verbosity integer
+        return ex.args[2] # the actual verbosity value
     end
     return nothing
 end
@@ -227,7 +258,7 @@ specified).
 function filter_out_verbosity(exs)
     verb = nothing
     exs = filter(exs) do ex
-        v = verbosity(ex)
+        v = LearnTestAPI.verb(ex)
         keep = isnothing(v)
         keep || (verb = v)
         keep
@@ -256,25 +287,23 @@ X = (
 @testapi MyFeatureSelector(; features=[:feature3,]) X verbosity=1
 ```
 
-!!! warning
-
-    New releases of LearnTestAPI.jl may add tests to `@testapi`, and this may result in
-    new failures in client package test suites. Nevertheless, adding a test to `@testapi`
-    is not considered a breaking change to LearnTestAPI, unless the addition supports a
-    breaking release of LearnAPI.jl.
-
 # Extended help
 
-# What is tested?
+# What is not tested?
 
 When `verbosity=1` (the default) the test log describes all contracts tested.
 
 The following are *not* tested:
 
-- `inverse_transform` is an approximate left or right inverse to `transform`
+- That the output of `LearnAPI.target(learner, data)` is indeed a target, in the sense
+  that it can be paired, in some way, with the output of `predict`. Such a test would be
+  to suitably pair the output with a predicted proxy for the target, using, say, a proper
+  scoring rule, in the case of probabilistic predictions.
 
-- `transform(learner, ...)` and `predict(learner, ...)` (the one-line convenience
-  methods that imply `fit`)
+- That `inverse_transform` is an approximate left or right inverse to `transform`
+
+- That the one-line convenience methods, `transform(learner, ...)` or `predict(learner,
+  ...)`, where implemented, have the same effect as the two-line calls they combine.
 
 Whenever the internal `learner` algorithm involves case distinctions around data or
 hyperparameters, it is recommended that multiple datasets, and learners with a variety of
@@ -307,182 +336,201 @@ macro testapi(learner, data...)
         import InteractiveUtils
 
         learner = $(esc(learner))
+        verbosity=$verbosity
         _human_name = LearnAPI.human_name(learner)
 
-        # define `log` command and make intial log:
-        if isnothing($verbosity) || $verbosity > 0
-            loud = true
+        if isnothing(verbosity) || verbosity > 0
+            @info "------ @testapi - $_human_name "*$INFO_LOUD
         else
-            loud = false
-        end
-        if loud
-            log(message; prefix="") = @info "$(prefix)@testapi - $_human_name "*message
-            log($INFO_LOUD; prefix="------ ")
-        else
-            log(message; args...) = nothing
-            $verbosity > -1 && @info "@testapi - $_human_name "*$INFO_QUIET
+            verbosity > -1 && @info "@testapi - $_human_name "*$INFO_QUIET
         end
 
-        Test.@testset "Implementation of LearnAPI.jl for $_human_name" begin
-
-            log($INFO_CONSTRUCTOR)
+        LearnTestAPI.@logged_testset $INFO_CONSTRUCTOR verbosity begin
             Test.@test LearnAPI.clone(learner) == learner
+        end
 
-            if !LearnAPI.is_composite(learner)
-                log($INFO_IS_COMPOSITE)
+        if !LearnAPI.is_composite(learner)
+            LearnTestAPI.@logged_testset $INFO_IS_COMPOSITE verbosity begin
                 Test.@test all(propertynames(learner)) do name
                     !LearnAPI.is_learner(getproperty(learner, name))
                 end
             end
+        end
 
-            docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
-            occursin("No documentation found", docstring) && $verbosity > -1 &&
-                @warn "@testapi - $_human_name "*$WARN_DOCUMENTATION
+        docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
+        occursin("No documentation found", docstring) && verbosity > -1 &&
+            @warn "@testapi - $_human_name "*$WARN_DOCUMENTATION
 
-            _functions = LearnAPI.functions(learner)
+        _functions = LearnAPI.functions(learner)
 
-            log($INFO_FUNCTIONS)
-            Test.@test issubset(
-                (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
-                _functions,
-            )
+        LearnTestAPI.@logged_testset $INFO_FUNCTIONS verbosity begin
+            Test.@test issubset(LearnAPI.functions()[1:4], _functions)
+        end
 
-            log($INFO_TAGS)
-            _tags = LearnAPI.tags(learner)
+        _tags = LearnAPI.tags(learner)
+        LearnTestAPI.@logged_testset $INFO_TAGS verbosity begin
             Test.@test _tags isa Tuple
             Test.@test issubset(
                 _tags,
                 LearnAPI.tags(),
             )
-            Test.@test issubset(
-                (:(LearnAPI.fit), :(LearnAPI.learner), :(LearnAPI.strip), :(LearnAPI.obs)),
-                _functions,
-            )
+        end
 
-            if :(LearnAPI.predict) in _functions
-                _kinds_of_proxy = LearnAPI.kinds_of_proxy(learner)
-                log($INFO_KINDS_OF_PROXY)
+        if :(LearnAPI.predict) in _functions
+            _kinds_of_proxy = LearnAPI.kinds_of_proxy(learner)
+            LearnTestAPI.@logged_testset $INFO_KINDS_OF_PROXY verbosity begin
                 Test.@test !isempty(_kinds_of_proxy)
                 Test.@test _kinds_of_proxy isa Tuple
                 Test.@test all(_kinds_of_proxy) do k
                     k isa LearnAPI.KindOfProxy
                 end
             end
+        end
 
-            _is_static = LearnAPI.is_static(learner)
+        _is_static = LearnAPI.is_static(learner)
 
-            for (i, data) in enumerate([$(esc.(data)...)])
+        for (i, data) in enumerate([$(esc.(data)...)])
 
-                dataset = "- dataset #$i"
-                if _is_static
-                    log(dataset*$INFO_FIT_IS_STATIC)
-                    model = LearnAPI.fit(learner; verbosity=$verbosity-1)
-                else
-                    log(dataset*$INFO_FIT_IS_NOT_STATIC)
-                    model = LearnAPI.fit(learner, data; verbosity=$verbosity-1)
-                end
+            verbosity > 0 && @info dataset = "@testapi - $_human_name - dataset #$i"
 
-                log(dataset*$INFO_LEARNER)
+            if _is_static
+                model =
+                    LearnTestAPI.@logged_testset $INFO_FIT_IS_STATIC verbosity begin
+                        LearnAPI.fit(learner; verbosity=verbosity-1)
+                    end
+            else
+                model =
+                    LearnTestAPI.@logged_testset $INFO_FIT_IS_NOT_STATIC verbosity begin
+                        LearnAPI.fit(learner, data; verbosity=verbosity-1)
+                    end
+            end
+
+            LearnTestAPI.@logged_testset $INFO_LEARNER verbosity begin
                 Test.@test LearnAPI.learner(model) == learner
                 Test.@test LearnAPI.learner(LearnAPI.strip(model)) == learner
+            end
 
-                implemented_methods = map(
-                    vcat(
-                        InteractiveUtils.methodswith(typeof(learner), LearnAPI),
-                        InteractiveUtils.methodswith(typeof(model), LearnAPI),
-                    )) do f
-                        name = getfield(f, :name)
-                        Meta.parse("LearnAPI.$name")
-                    end |> unique
+            implemented_methods = map(
+                vcat(
+                    InteractiveUtils.methodswith(typeof(learner), LearnAPI),
+                    InteractiveUtils.methodswith(typeof(model), LearnAPI),
+                )) do f
+                    name = getfield(f, :name)
+                    Meta.parse("LearnAPI.$name")
+                end |> unique
 
-                implemented_methods =
-                    intersect(implemented_methods, LearnAPI.functions())
+            implemented_methods =
+                intersect(implemented_methods, LearnAPI.functions())
 
-                log(dataset*$INFO_FUNCTIONS2)
+            LearnTestAPI.@logged_testset $INFO_FUNCTIONS2 verbosity begin
                 Test.@test all(f -> f in _functions, implemented_methods)
+            end
 
-                log(dataset*$INFO_FEATURES)
-                X = LearnAPI.features(learner, data)
+            X = LearnTestAPI.@logged_testset $INFO_FEATURES verbosity begin
+                LearnAPI.features(learner, data)
+            end
 
-                if !(isnothing(X))
-                    log(dataset*$INFO_OBS_INVOLUTIVITY)
+            if !(isnothing(X))
+                LearnTestAPI.@logged_testset $INFO_OBS_INVOLUTIVITY verbosity begin
                     observations = LearnAPI.obs(model, X)
                     Test.@test LearnAPI.obs(model, observations) == observations
                 end
+            end
 
-                log(dataset*$INFO_SERIALIZATION)
+            model2 = LearnTestAPI.@logged_testset $INFO_SERIALIZATION verbosity begin
                 small_model = LearnAPI.strip(model)
                 io = IOBuffer()
                 Serialization.serialize(io, small_model)
                 seekstart(io)
-                model2 = Serialization.deserialize(io)
+                Serialization.deserialize(io)
+            end
 
-                if :(LearnAPI.predict) in _functions
-                    # get data argument for `predict`:
-                    if isnothing(X)
-                        args = ()
-                        log(dataset*$INFO_PREDICT_HAS_NO_FEATURES)
-                    else
-                        args = (X,)
-                        log(dataset*$INFO_PREDICT_HAS_FEATURES)
-                    end
+            if :(LearnAPI.predict) in _functions
+                # get data argument for `predict`:
+                if isnothing(X)
+                    args = ()
+                    message = $INFO_PREDICT_HAS_NO_FEATURES
+                else
+                    args = (X,)
+                    message = $INFO_PREDICT_HAS_FEATURES
+                end
+                yhat = LearnTestAPI.@logged_testset message verbosity begin
                     [LearnAPI.predict(model, k, args...) for k in _kinds_of_proxy]
-                    yhat = LearnAPI.predict(model, args...)
+                    LearnAPI.predict(model, args...)
+                end
 
-                    log(dataset*$INFO_STRIP)
+                LearnTestAPI.@logged_testset $INFO_STRIP verbosity begin
                     Test.@test LearnAPI.predict(LearnAPI.strip(model), args...) == yhat
+                end
 
-                    log(dataset*$INFO_STRIP2)
+                LearnTestAPI.@logged_testset $INFO_STRIP2 verbosity begin
                     Test.@test LearnAPI.predict(model2, args...) == yhat
+                end
 
-                    if !isnothing(X)
-                        log(dataset*$INFO_OBS_AND_PREDICT)
+                if !isnothing(X)
+                    LearnTestAPI.@logged_testset $INFO_OBS_AND_PREDICT verbosity begin
                         Test.@test all(_kinds_of_proxy) do kind
-                            LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) == yhat
+                            LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) ==
+                                yhat
                         end
                     end
                 end
+            end
 
-                if :(LearnAPI.transform) in _functions
-                    # get data argument for `transform`:
-                    if isnothing(X)
-                        args = ()
-                        log(dataset*$INFO_TRANSFORM_HAS_NO_FEATURES)
-                    else
-                        args = (X,)
-                        log(dataset*$INFO_TRANSFORM_HAS_FEATURES)
-                    end
-                    W = LearnAPI.transform(model, args...)
-
-                    log(dataset*$INFO_STRIP_TRANSFORM)
-                    Test.@test LearnAPI.transform(LearnAPI.strip(model), args...) == W
-
-                    log(dataset*$INFO_STRIP2_TRANSFORM)
-                    Test.@test LearnAPI.transform(model2, args...) == W
-
-                    if !isnothing(X)
-                        log(dataset*$INFO_OBS_AND_TRANSFORM)
-                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) == W
-                    end
+            if :(LearnAPI.transform) in _functions
+                # get data argument for `transform`:
+                if isnothing(X)
+                    args = ()
+                    message = $INFO_TRANSFORM_HAS_NO_FEATURES
+                else
+                    args = (X,)
+                    message = $INFO_TRANSFORM_HAS_FEATURES
+                end
+                W = LearnTestAPI.@logged_testset message verbosity begin
+                    LearnAPI.transform(model, args...)
                 end
 
-                if :(LearnAPI.inverse_transform) in _functions
-                    log(dataset*$INFO_INVERSE_TRANSFORM)
-                    X2 = LearnAPI.inverse_transform(model, W)
+                LearnTestAPI.@logged_testset $INFO_STRIP_TRANSFORM verbosity begin
+                    Test.@test LearnAPI.transform(LearnAPI.strip(model), args...) == W
+                end
 
-                    log(dataset*$INFO_STRIP_INVERSE)
-                    Test.@test LearnAPI.inverse_transform(LearnAPI.strip(model), W) == X2
+                LearnTestAPI.@logged_testset $INFO_STRIP2_TRANSFORM verbosity begin
+                    Test.@test LearnAPI.transform(model2, args...) == W
+                end
 
-                    log(dataset*$INFO_STRIP2_INVERSE)
+                if !isnothing(X)
+                    LearnTestAPI.@logged_testset $INFO_OBS_AND_TRANSFORM verbosity begin
+                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) ==
+                            W
+                    end
+                end
+            end
+
+            if :(LearnAPI.inverse_transform) in _functions
+                X2 = LearnTestAPI.@logged_testset $INFO_INVERSE_TRANSFORM verbosity begin
+                    LearnAPI.inverse_transform(model, W)
+                end
+
+                LearnTestAPI.@logged_testset $INFO_STRIP_INVERSE verbosity begin
+                    Test.@test LearnAPI.inverse_transform(LearnAPI.strip(model), W) ==
+                        X2
+                end
+
+                LearnTestAPI.@logged_testset $INFO_STRIP2_INVERSE verbosity begin
                     Test.@test LearnAPI.inverse_transform(model2, W) == X2
                 end
+            end
 
-                if !_is_static
-                    log(dataset*$INFO_OBS_INVOLUTIVITY_FIT)
-                    observations = LearnAPI.obs(learner, data)
-                    Test.@test LearnAPI.obs(learner, observations) == observations
-                    log(dataset*$INFO_OBS_AND_FIT)
-                    obsmodel = LearnAPI.fit(learner, observations; verbosity=$verbosity-1)
+            if !_is_static
+                observations =
+                    LearnTestAPI.@logged_testset $INFO_OBS_INVOLUTIVITY_FIT verbosity begin
+                        observations = LearnAPI.obs(learner, data)
+                        Test.@test LearnAPI.obs(learner, observations) == observations
+                        observations
+                    end
+
+                LearnTestAPI.@logged_testset $INFO_OBS_AND_FIT verbosity begin
+                    obsmodel = LearnAPI.fit(learner, observations; verbosity=verbosity - 1)
                     if :(LearnAPI.predict) in _functions
                         Test.@test LearnAPI.predict(model, args...) ==
                             LearnAPI.predict(obsmodel, args...)
@@ -496,42 +544,11 @@ macro testapi(learner, data...)
                             LearnAPI.inverse_transform(obsmodel, W)
                     end
                 end
+            end
 
-            end # for loop over datasets
-        end # @testset
-        $verbosity > 0 && log("- tests finished. ------"; prefix="----- ")
+        end # for loop over datasets
+        verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
     end # quote
-end
+end # macro
 
 end # module
-
-"""
-    LearnTestAPI
-
-Module for testing implementations of the interfacde defined in
-[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/).
-
-If your package defines an object `learner` implementing the interface, then put something
-like this in your test suite:
-
-```julia
-using LearnTestAPI
-
-# create some test data:
-X = ...
-y = ...
-data = (X, y)
-
-# bump verbosity to debug:
-@testapi learner data verbosity=1
-```
-
-Once tests pass, set `verbosity=0` to suppress the detailed logging.
-
-For details and options see [`LearnTestAPI.@testapi`](@ref)
-
-LearnAPI.jl and LearnTestAPI.jl have synchronized releases. For example, LearnTestAPI.jl
-version 0.2.3 will generally support LearnAPI.jl versions 0.2.*.
-
-"""
-LearnTestAPI

@@ -18,12 +18,29 @@ import DataFrames
 struct Selector
     names::Vector{Symbol}
 end
+
+"""
+    Selector(; names=Symbol[])
+
+Instantiate a static transformer that selects only the feature specified by `names`.
+
+```julia
+learner = Selector(names=[:x, :w])
+X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
+model = fit(learner) # no data arguments!
+W = transform(model, X)
+
+# one-liner:
+@assert transform(learner, X) == W
+```
+
+"""
 Selector(; names=Symbol[]) =  Selector(names) # LearnAPI.constructor defined later
 
 # `fit` consumes no observational data, does no "learning", and just returns a thinly
 # wrapped `learner` (to distinguish it from the learner in dispatch):
 LearnAPI.fit(learner::Selector; verbosity=1) = Ref(learner)
-LearnAPI.learner(model) = model[]
+LearnAPI.learner(model::Base.RefValue{Selector}) = model[]
 
 function LearnAPI.transform(model::Base.RefValue{Selector}, X)
     learner = LearnAPI.learner(model)
