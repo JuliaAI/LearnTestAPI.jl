@@ -277,7 +277,7 @@ LearnAPI.fit(learner::BabyRidge, X, y; kwargs...) =
 # ## Tests
 
 learner = BabyRidge(lambda=0.5)
-@testapi learner data verbosity=0
+@testapi learner data verbosity=1
 
 @testset "extra tests for baby ridge" begin
     model = fit(learner, Tables.subset(X, train), y[train]; verbosity=0)

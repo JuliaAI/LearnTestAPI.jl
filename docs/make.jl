@@ -1,6 +1,5 @@
 using Documenter
 using LearnTestAPI
-using ScientificTypesBase
 
 const  REPO = Remotes.GitHub("JuliaAI", "LearnTestAPI.jl")
 

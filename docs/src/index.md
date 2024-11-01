@@ -27,8 +27,29 @@ version 0.2.3 will generally support all LearnAPI.jl versions 0.2.*.
     breaking release of LearnAPI.jl.
 
 
+## Sample implementations
+
+Several sample implementations of
+[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/) are part of the test suite of
+LearnTestAPI.jl. These are located in the 
+[/test/patterns/](https://github.com/JuliaAI/LearnTestAPI.jl/tree/dev/test/patterns)
+folder of the GitHub repository, but are also linked from the [Common implementation
+patterns](https://juliaai.github.io/LearnAPI.jl/dev/common_implementation_patterns/)
+section of the LearnAPI.jl manual.
+
+
 # Reference
 
 ```@docs
 LearnTestAPI.@testapi
+```
+
+## Private methods
+
+```@docs
+LearnTestAPI.@logged_testset
+LearnTestAPI.@nearly
+LearnTestAPI.isnear
+LearnTestAPI.learner_get
+LearnTestAPI.model_get
 ```
