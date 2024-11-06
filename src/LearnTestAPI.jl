@@ -36,7 +36,6 @@ import MacroTools
 
 include("tools.jl")
 
-export @testapi
 
 # # LOGGING
 
@@ -71,8 +70,12 @@ const OBLIGATORY_FUNCTIONS =
     join(map(ex->"`:$ex`", LearnAPI.functions()[1:4]), ", ", " and ")
 const FUNCTIONS = """
 
-    Testing that `LearnAPI.functions(learner)` includes the obligatory functions,
-    $OBLIGATORY_FUNCTIONS.
+    Testing that `LearnAPI.functions(learner)` includes $OBLIGATORY_FUNCTIONS.
+
+  """
+const FUNCTIONS3 = """
+
+    Testing that `LearnAPI.functions(learner)` includes `:(LearnAPI.features).`
 
   """
 const TAGS = """
@@ -399,6 +402,7 @@ macro testapi(learner, data...)
         verbosity=$verbosity
         _human_name = LearnAPI.human_name(learner)
         _data_interface = LearnAPI.data_interface(learner)
+        _is_static = LearnAPI.is_static(learner)
 
         if isnothing(verbosity) || verbosity > 0
             @info "------ @testapi - $_human_name "*$LOUD
@@ -428,6 +432,12 @@ macro testapi(learner, data...)
             Test.@test issubset(LearnAPI.functions()[1:4], _functions)
         end
 
+        if _is_static
+            LearnTestAPI.@logged_testset $FUNCTIONS3 verbosity begin
+                Test.@test :(LearnAPI.features) in _functions
+            end
+        end
+
         _tags = LearnAPI.tags(learner)
         LearnTestAPI.@logged_testset $TAGS verbosity begin
             Test.@test _tags isa Tuple
@@ -447,8 +457,6 @@ macro testapi(learner, data...)
                 end
             end
         end
-
-        _is_static = LearnAPI.is_static(learner)
 
         for (i, data) in enumerate([$(esc.(data)...)])
 
@@ -671,5 +679,16 @@ macro testapi(learner, data...)
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
     end # quote
 end # macro
+
+
+
+include("learners/static_algorithms.jl")
+include("learners/regression.jl")
+include("learners/ensembling.jl")
+#include("learners/gradient_descent.jl")
+include("learners/incremental_algorithms.jl")
+include("learners/dimension_reduction.jl")
+
+export @testapi
 
 end # module

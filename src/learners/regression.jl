@@ -1,20 +1,16 @@
-using Test
-using LearnAPI
-using LinearAlgebra
+# This file defines:
+
+# - `Ridge(; lambda=0.1)`
+# - `BabyRidge(; lambda=0.1)`
+
 using Tables
-import MLUtils
-import DataFrames
-using LearnTestAPI
+
 
 # # NAIVE RIDGE REGRESSION WITH NO INTERCEPTS
 
 # We overload `obs` to expose internal representation of data. See later for a simpler
 # variation using the `obs` fallback.
 
-
-# ## Implementation
-
-# no docstring here - that goes with the constructor
 struct Ridge
     lambda::Float64
 end
@@ -129,85 +125,12 @@ LearnAPI.fit(learner::Ridge, X, y; kwargs...) =
     fit(learner, (X, y); kwargs...)
 
 
-# ## Tests
-
-# synthetic test data:
-n = 30 # number of observations
-train = 1:6
-test = 7:10
-a, b, c = rand(n), rand(n), rand(n)
-X = (; a, b, c)
-X = DataFrames.DataFrame(X)
-y = 2a - b + 3c + 0.05*rand(n)
-data = (X, y)
-
-learner = Ridge(lambda=0.5)
-@testapi learner data verbosity=0
-
-@testset "extra tests for ridge regression" begin
-    @test :(LearnAPI.obs) in LearnAPI.functions(learner)
-
-    @test LearnAPI.target(learner, data) == y
-    @test LearnAPI.features(learner, data) == X
-
-    # verbose fitting:
-    @test_logs(
-        (:info, r"Feature"),
-        fit(
-            learner,
-            Tables.subset(X, train),
-            y[train];
-            verbosity=1,
-        ),
-    )
-
-    # quiet fitting:
-    model = @test_logs(
-        fit(
-            learner,
-            Tables.subset(X, train),
-            y[train];
-            verbosity=0,
-        ),
-    )
-
-    ŷ = predict(model, Point(), Tables.subset(X, test))
-    @test ŷ isa Vector{Float64}
-    @test predict(model, Tables.subset(X, test)) == ŷ
-
-    fitobs = LearnAPI.obs(learner, data)
-    predictobs = LearnAPI.obs(model, X)
-    model = fit(learner, MLUtils.getobs(fitobs, train); verbosity=0)
-    @test LearnAPI.target(learner, fitobs) == y
-    @test predict(model, Point(), MLUtils.getobs(predictobs, test)) ≈ ŷ
-    @test predict(model, LearnAPI.features(learner, fitobs)) ≈ predict(model, X)
-
-    @test LearnAPI.feature_importances(model) isa Vector{<:Pair{Symbol}}
-
-    filename = tempname()
-    using Serialization
-    small_model = LearnAPI.strip(model)
-    serialize(filename, small_model)
-
-    recovered_model = deserialize(filename)
-    @test LearnAPI.learner(recovered_model) == learner
-    @test predict(
-        recovered_model,
-        Point(),
-        MLUtils.getobs(predictobs, test)
-    ) ≈ ŷ
-
-end
-
 # # VARIATION OF RIDGE REGRESSION THAT USES FALLBACK OF LearnAPI.obs
 
 # no docstring here - that goes with the constructor
 struct BabyRidge
     lambda::Float64
 end
-
-
-# ## Implementation
 
 """
     BabyRidge(; lambda=0.1)
@@ -272,26 +195,3 @@ LearnAPI.strip(model::BabyRidgeFitted) =
 # convenience method:
 LearnAPI.fit(learner::BabyRidge, X, y; kwargs...) =
     fit(learner, (X, y); kwargs...)
-
-
-# ## Tests
-
-learner = BabyRidge(lambda=0.5)
-@testapi learner data verbosity=1
-
-@testset "extra tests for baby ridge" begin
-    model = fit(learner, Tables.subset(X, train), y[train]; verbosity=0)
-    ŷ = predict(model, Point(), Tables.subset(X, test))
-    @test ŷ isa Vector{Float64}
-
-    fitobs = obs(learner, data)
-    predictobs = LearnAPI.obs(model, X)
-    model = fit(learner, MLUtils.getobs(fitobs, train); verbosity=0)
-    @test predict(model, Point(), MLUtils.getobs(predictobs, test)) == ŷ ==
-        predict(model, MLUtils.getobs(predictobs, test))
-    @test LearnAPI.target(learner, data) == y
-    @test LearnAPI.predict(model, X) ≈
-        LearnAPI.predict(model, LearnAPI.features(learner, data))
-end
-
-true

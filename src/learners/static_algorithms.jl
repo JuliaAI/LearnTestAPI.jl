@@ -1,16 +1,13 @@
+# This file defines:
+
+# - `Selector(; names=Symbol[])`
+# - `FancySelector(; names=Symbol[])
+
 using LearnAPI
 using Tables
 
-# for testing:
-using Test
-using LearnTestAPI
-import MLUtils
-import DataFrames
-
 
 # # TRANSFORMER TO SELECT SOME FEATURES (COLUMNS) OF A TABLE
-
-# ## Implementation
 
 # See later for a variation that stores the names of rejected features in the model
 # object, for inspection by an accessor function.
@@ -69,27 +66,13 @@ end
         :(LearnAPI.learner),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
+        :(LearnAPI.features),
         :(LearnAPI.transform),
     ),
 )
 
-# ## Tests
-
-learner = Selector(names=[:x, :w])
-X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
-@testapi learner X verbosity=0
-
-@testset "test a static transformer" begin
-    model = fit(learner) # no data arguments!
-    W = transform(model, X)
-    @test W == DataFrames.DataFrame(Tables.matrix(X)[:,[1,4]], [:x, :w])
-    @test W == transform(learner, X)
-end
-
 
 # # FEATURE SELECTOR THAT REPORTS BYPRODUCTS OF SELECTION PROCESS
-
-# ## Implememtation
 
 # This a variation of `Selector` above that stores the names of rejected features in the
 # output of `fit`, for inspection by an accessor function called `rejected`.
@@ -155,24 +138,8 @@ end
         :(LearnAPI.learner),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
+        :(LearnAPI.features),
         :(LearnAPI.transform),
-        :(MyPkg.rejected), # accessor function not owned by LearnAPI.jl,
+        :(LearnTestAPI.rejected), # accessor function not owned by LearnAPI.jl,
     )
 )
-
-# ## Tests
-
-learner = FancySelector(names=[:x, :w])
-X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
-@testapi learner X verbosity=0
-
-@testset "test a variation that reports byproducts" begin
-    model = fit(learner) # no data arguments!
-    @test !isdefined(model, :reject)
-    filtered =  DataFrames.DataFrame(Tables.matrix(X)[:,[1,4]], [:x, :w])
-    @test transform(model, X) == filtered
-    @test transform(learner, X) == filtered
-    @test rejected(model) == [:y, :z]
-end
-
-true

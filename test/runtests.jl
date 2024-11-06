@@ -2,12 +2,12 @@ using Test
 
 test_files = [
     "tools.jl",
-    "patterns/static_algorithms.jl",
-    "patterns/regression.jl",
-    "patterns/ensembling.jl",
-#    "patterns/gradient_descent.jl",
-    "patterns/incremental_algorithms.jl",
-    "patterns/dimension_reduction.jl",
+    "learners/static_algorithms.jl",
+    "learners/regression.jl",
+    "learners/ensembling.jl",
+#    "learners/gradient_descent.jl",
+    "learners/incremental_algorithms.jl",
+    "learners/dimension_reduction.jl",
 ]
 
 files = isempty(ARGS) ? test_files : ARGS

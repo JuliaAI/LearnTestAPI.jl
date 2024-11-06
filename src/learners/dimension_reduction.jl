@@ -1,16 +1,13 @@
+# This file defines `TruncatedSVD(; codim=1)`
+
 using LearnAPI
 using LinearAlgebra
 
-# for testing:
-using Test
-using LearnTestAPI
-using StableRNGs
-using Statistics
 
 # # DIMENSION REDUCTION USING TRUNCATED SVD DECOMPOSITION
 
 # Recall that truncated SVD reduction is the same as PCA reduction, but without
-# centering. We suppose observations are presented the columns of a `Real` matrix.
+# centering. We suppose observations are presented as the columns of a `Real` matrix.
 
 # Some struct fields are left abstract for simplicity.
 
@@ -108,32 +105,3 @@ LearnAPI.strip(model::TruncatedSVDFitted) =
         :(LearnAPI.extras),
    )
 )
-
-# ## Tests
-
-# synthetic test data:
-rng = StableRNG(123)
-r = svd(rand(rng, 5, 100))
-U, Vt = r.U, r.Vt
-X = U*diagm([1, 2, 3, 0.01, 0.01])*Vt
-
-learner = TruncatedSVD(codim=2)
-@testapi learner X verbosity=0
-
-@testset "test an implementation of Truncated SVD" begin
-    model = @test_logs(
-        (:info, r"Singular"),
-        fit(learner, X),
-    )
-    W = transform(model, X)
-    # fit-transform in one-call:
-    @test transform(learner, X; verbosity=0) == W
-    outdim, indim, singular_values = LearnAPI.extras(model)
-    @test singular_values[4] < 10*singular_values[1]
-    X_reconstructed = inverse_transform(model, W)
-
-    # `inverse_transform` provides approximate left-inverse to `transform`:
-    @test mean(abs.(X_reconstructed - X)) < 0.001
-end
-
-true
