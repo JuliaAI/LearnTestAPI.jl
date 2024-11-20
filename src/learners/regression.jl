@@ -23,7 +23,7 @@ Instantiate a ridge regression learner, with regularization of `lambda`.
 """
 Ridge(; lambda=0.1) = Ridge(lambda) # LearnAPI.constructor defined later
 
-struct RidgeFitObs{T,M<:AbstractMatrix{T}}
+struct RidgeFitObs{T,M<:AbstractArray{T}}
     A::M  # p x n
     names::Vector{Symbol}
     y::Vector{T}
