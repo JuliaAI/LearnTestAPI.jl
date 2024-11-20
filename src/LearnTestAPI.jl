@@ -392,11 +392,11 @@ macro testapi(learner, data...)
     data, verbosity = filter_out_verbosity(data)
 
     quote
-        import Test
-        import Serialization
-        import MLUtils
-        import LearnAPI
-        import InteractiveUtils
+        import LearnTestAPI.Test
+        import LearnTestAPI.Serialization
+        import LearnTestAPI.MLUtils
+        import LearnTestAPI.LearnAPI
+        import LearnTestAPI.InteractiveUtils
 
         learner = $(esc(learner))
         verbosity=$verbosity
@@ -405,9 +405,9 @@ macro testapi(learner, data...)
         _is_static = LearnAPI.is_static(learner)
 
         if isnothing(verbosity) || verbosity > 0
-            @info "------ @testapi - $_human_name "*$LOUD
+            @info "------ running @testapi - $_human_name "*$LOUD
         else
-            verbosity > -1 && @info "@testapi - $_human_name "*$QUIET
+            verbosity > -1 && @info "running @testapi - $_human_name "*$QUIET
         end
 
         LearnTestAPI.@logged_testset $CONSTRUCTOR verbosity begin
