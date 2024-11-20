@@ -13,7 +13,7 @@ X = U*diagm([1, 2, 3, 0.01, 0.01])*Vt
 learner = LearnTestAPI.TruncatedSVD(codim=2)
 @testapi learner X verbosity=0
 
-@testset "test an implementation of Truncated SVD" begin
+@testset "extra test for truncated SVD" begin
     model = @test_logs(
         (:info, r"Singular"),
         fit(learner, X),

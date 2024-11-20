@@ -24,7 +24,7 @@ atom = LearnTestAPI.Ridge()
 learner = LearnTestAPI.Ensemble(atom; n=4, rng)
 @testapi learner data verbosity=0
 
-@testset "test an implementation of bagged ensemble of ridge regressors" begin
+@testset "extra tests for ensemble" begin
     @test LearnAPI.clone(learner) == learner
     @test LearnAPI.target(learner, data) == y
     @test LearnAPI.features(learner, data) == X

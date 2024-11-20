@@ -61,6 +61,7 @@ learner = LearnTestAPI.Ridge(lambda=0.5)
     @test predict(model, LearnAPI.features(learner, fitobs)) ≈ predict(model, X)
 
     @test LearnAPI.feature_importances(model) isa Vector{<:Pair{Symbol}}
+    @test LearnAPI.feature_names(model) == [:a, :b, :c]
 
     filename = tempname()
     using Serialization

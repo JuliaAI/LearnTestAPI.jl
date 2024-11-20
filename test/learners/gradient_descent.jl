@@ -1,5 +1,6 @@
 using Test
 using LearnAPI
+using LearnTestAPI
 using Random
 using Statistics
 using StableRNGs
@@ -32,9 +33,12 @@ Xtest = X[:, test];
 ytrain = y[train];
 ytest = y[test];
 
+rng = StableRNG(123) learner =
+    LearnTestAPI.PerceptronClassifier(; optimiser=Optimisers.Adam(0.01), epochs=40, rng)
+
+@testapi learner (X, y) verbosity=0
+
 @testset "PerceptronClassfier" begin
-    rng = StableRNG(123)
-    learner = PerceptronClassifier(; optimiser=Optimisers.Adam(0.01), epochs=40, rng)
     @test LearnAPI.clone(learner) == learner
     @test :(LearnAPI.update) in LearnAPI.functions(learner)
     @test LearnAPI.target(learner, (X, y)) == y

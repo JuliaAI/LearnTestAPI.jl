@@ -26,7 +26,7 @@ For details and options see [`LearnTestAPI.@testapi`](@ref)
 """
 module LearnTestAPI
 
-import LearnAPI
+using LearnAPI
 import Test
 import Serialization
 import MLUtils
@@ -303,12 +303,12 @@ end
 *Private method.*
 
 Return `(filtered_exs, verbosity)` where `filtered_exs` is `exs` with any `verbosity`
-specification dropped, and `verbosity` is the verbosity value (`nothing` if not
+specification dropped, and `verbosity` is the verbosity value (`1` if not
 specified).
 
 """
 function filter_out_verbosity(exs)
-    verb = nothing
+    verb = 1
     exs = filter(exs) do ex
         v = LearnTestAPI.verb(ex)
         keep = isnothing(v)
@@ -422,7 +422,7 @@ macro testapi(learner, data...)
             end
         end
 
-        docstring = Base.Docs.doc(LearnAPI.constructor(learner)) |> string
+        docstring = @doc(LearnAPI.constructor(learner)) |> string
         occursin("No documentation found", docstring) && verbosity > -1 &&
             @warn "@testapi - $_human_name "*$WARN_DOCUMENTATION
 
@@ -505,6 +505,8 @@ macro testapi(learner, data...)
                     Test.@test LearnAPI.obs(model, observations) == observations
                 end
             end
+
+            # ## TODO: check involutivity of obs(learner, _) (and is this documented?)
 
             model2 = LearnTestAPI.@logged_testset $SERIALIZATION verbosity begin
                 small_model = LearnAPI.strip(model)

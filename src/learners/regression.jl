@@ -3,8 +3,8 @@
 # - `Ridge(; lambda=0.1)`
 # - `BabyRidge(; lambda=0.1)`
 
+using LearnAPI
 using Tables
-
 
 # # NAIVE RIDGE REGRESSION WITH NO INTERCEPTS
 
@@ -33,6 +33,7 @@ struct RidgeFitted{T,F}
     learner::Ridge
     coefficients::Vector{T}
     feature_importances::F
+    names::Vector{Symbol}
 end
 
 LearnAPI.learner(model::RidgeFitted) = model.learner
@@ -71,7 +72,7 @@ function LearnAPI.fit(learner::Ridge, observations::RidgeFitObs; verbosity=1)
     verbosity > 0 &&
         @info "Features in order of importance: $(first.(feature_importances))"
 
-    return RidgeFitted(learner, coefficients, feature_importances)
+    return RidgeFitted(learner, coefficients, feature_importances, names)
 
 end
 
@@ -98,9 +99,10 @@ LearnAPI.predict(model::RidgeFitted, ::Point, Xnew) =
 
 # accessor function:
 LearnAPI.feature_importances(model::RidgeFitted) = model.feature_importances
+LearnAPI.feature_names(model::RidgeFitted) = model.names
 
 LearnAPI.strip(model::RidgeFitted) =
-    RidgeFitted(model.learner, model.coefficients, nothing)
+    RidgeFitted(model.learner, model.coefficients, nothing, Symbol[])
 
 @trait(
     Ridge,
