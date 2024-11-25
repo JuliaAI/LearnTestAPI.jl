@@ -49,7 +49,7 @@ end
 
 LearnAPI.learner(model::TruncatedSVDFitted) = model.learner
 
-function LearnAPI.fit(learner::TruncatedSVD, X; verbosity=1)
+function LearnAPI.fit(learner::TruncatedSVD, X; verbosity=LearnAPI.default_verbosity())
 
     # unpack hyperparameters:
     codim = learner.codim

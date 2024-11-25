@@ -27,24 +27,31 @@ version 0.2.3 will generally support all LearnAPI.jl versions 0.2.*.
     breaking release of LearnAPI.jl.
 
 
-## Sample implementations
-
-Several sample implementations of
-[LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/) are part of the test suite of
-LearnTestAPI.jl. These are located in the 
-[/test/patterns/](https://github.com/JuliaAI/LearnTestAPI.jl/tree/dev/test/patterns)
-folder of the GitHub repository, but are also linked from the [Common implementation
-patterns](https://juliaai.github.io/LearnAPI.jl/dev/common_implementation_patterns/)
-section of the LearnAPI.jl manual.
-
-
-# Reference
+## The @testapi macro
 
 ```@docs
 LearnTestAPI.@testapi
 ```
 
+## Learners for testing
+
+LearnTestAPI.jl provides some simple, tested, LearnAPI.jl implementations, which may be
+useful for testing learner wrappers and meta-algorithms. 
+
+```@docs
+LearnTestAPI.Ridge
+LearnTestAPI.BabyRidge
+LearnTestAPI.TruncatedSVD
+LearnTestAPI.Selector
+LearnTestAPI.FancySelector
+LearnTestAPI.NormalEstimator
+LearnTestAPI.Ensemble
+```
+
+
 ## Private methods
+
+For LearnTestAPI.jl developers only, and subject to breaking changes:
 
 ```@docs
 LearnTestAPI.@logged_testset
@@ -52,4 +59,6 @@ LearnTestAPI.@nearly
 LearnTestAPI.isnear
 LearnTestAPI.learner_get
 LearnTestAPI.model_get
+LearnTestAPI.verb
+LearnTestAPI.filter_out_verbosity
 ```

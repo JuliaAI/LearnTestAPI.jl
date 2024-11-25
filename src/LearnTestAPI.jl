@@ -115,9 +115,14 @@ const FUNCTIONS2 = """
     `??LearnAPI.functions` for a checklist.
 
   """
+const OBS = """
+
+    Attempting to call `observations = obs(learner, data)`.
+
+  """
 const FEATURES = """
 
-    Attempting to call `LearnAPI.features(learner, data)`.
+    Attempting to call `LearnAPI.features(learner, observations)`.
 
   """
 const OBS_INVOLUTIVITY = """
@@ -134,13 +139,15 @@ const SERIALIZATION = """
 const PREDICT_HAS_NO_FEATURES = """
 
     Attempting to call `predict(model, kind)` for each `kind` in
-    `LearnAPI.kinds_of_proxy(learner)`.
+    `LearnAPI.kinds_of_proxy(learner)`. (We are not providing `predict` with a data
+    argument because `features(obs(learner, data)) == nothing`).
+
 
   """
 const PREDICT_HAS_FEATURES = """
 
-    Since `X = LearnAPI.features(learner, data)` is not `nothing`, we are attempting to
-    call `predict(model, kind, X)` for each `kind` in `LearnAPI.kinds_of_proxy(learner)`.
+    Attempting to call `predict(model, kind, X)` for each `kind` in
+    `LearnAPI.kinds_of_proxy(learner)`.
 
   """
 const STRIP = """
@@ -163,13 +170,13 @@ const OBS_AND_PREDICT = """
   """
 const TRANSFORM_HAS_NO_FEATURES = """
 
-    Attempting to call `transform(model)`.
+    Attempting to call `transform(model)` (and not `transform(model, X)`, because
+    `features(obs(learner, data)) == nothing`)..
 
   """
 const TRANSFORM_HAS_FEATURES = """
 
-    Since `X = LearnAPI.features(learner, data)` is not `nothing`, we are attempting to
-    call `transform(model, X)`.
+    Attempting to call `transform(model, X)`.
 
   """
 const STRIP_TRANSFORM = """
@@ -193,7 +200,7 @@ const OBS_AND_TRANSFORM = """
 const INVERSE_TRANSFORM = """
 
     Testing that `inverse_transform(model, W)` executes, where `W` is the output of
-    `transform(model, X)` and `X = LearnAPI.features(learner, data)`.
+    `transform(model, X)` and `X = LearnAPI.features(learner, observations)`.
 
   """
 const STRIP_INVERSE = """
@@ -227,7 +234,7 @@ const SELECTED_FOR_FIT = """
     data)`, using the interface declared by `LearnAPI.data_interface(learner)`. For
     example, if this interface is `LearnAPI.RandomAccess()`, the attempted selection is
     `data3 = MLUtils.getobs(_data, 1:MLUtils.numobs(_data))`. For this interface, also
-    testing that we can call `fit` on the selection, to obtain new `fit` result
+    testing that we can call `fit` on the selection, obtaining a new `fit` result
     `model3`.
 
   """
@@ -495,8 +502,12 @@ macro testapi(learner, data...)
                 Test.@test all(f -> f in _functions, implemented_methods)
             end
 
+            LearnTestAPI.@logged_testset $OBS verbosity begin
+                observations = obs(learner, data)
+            end
+
             X = LearnTestAPI.@logged_testset $FEATURES verbosity begin
-                LearnAPI.features(learner, data)
+                LearnAPI.features(learner, observations)
             end
 
             if !(isnothing(X))
@@ -571,13 +582,12 @@ macro testapi(learner, data...)
 
                 if !isnothing(X)
                     LearnTestAPI.@logged_testset $OBS_AND_TRANSFORM verbosity begin
-                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) ==
-                            W
+                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) == W
                     end
                 end
             end
 
-            if :(LearnAPI.inverse_transform) in _functions
+            if :(LearnAPI.inverse_transform) in _functions && !isnothing(X)
                 X2 = LearnTestAPI.@logged_testset $INVERSE_TRANSFORM verbosity begin
                     LearnAPI.inverse_transform(model, W)
                 end
@@ -679,6 +689,7 @@ macro testapi(learner, data...)
 
         end # for loop over datasets
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
+        nothing
     end # quote
 end # macro
 
