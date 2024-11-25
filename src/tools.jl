@@ -60,47 +60,49 @@ const ERR_BAD_LENGTH = ErrorException(
     "Actual iterator length different from `Base.length`. "
 )
 
-function get(learner_or_model, data, ::LearnAPI.RandomAccess)
-    observations = LearnAPI.obs(learner_or_model, data)
+function get(learner_or_model, data, ::LearnAPI.RandomAccess, apply)
+    observations = LearnAPI.obs(learner_or_model, data) |> apply
     n = MLUtils.numobs(observations)
     return MLUtils.getobs(observations, 1:n)
 end
-function get(learner_or_model, data, ::LearnAPI.FiniteIterable)
-    observations = LearnAPI.obs(learner_or_model, data)
+function get(learner_or_model, data, ::LearnAPI.FiniteIterable, apply)
+    observations = LearnAPI.obs(learner_or_model, data)|> apply
     n = Base.length(observations)
     ret = [x for x in observations]
     length(ret) == n || throw(ERR_BAD_LENGTH)
     return ret
 end
-function get(learner_or_model, data, ::LearnAPI.Iterable)
-    observations = LearnAPI.obs(learner_or_model, data)
+function get(learner_or_model, data, ::LearnAPI.Iterable, apply)
+    observations = LearnAPI.obs(learner_or_model, data) |> apply
     return [x for x in observations]
 end
 
 """
-    learner_get(learner, data)
+    learner_get(learner, data, apply=identity)
 
 *Private method.*
 
-Extract from `LearnAPI.obs(learner, data)` all observations, using the data access API
-specified by `LearnAPI.data_interface(learner)`. Used to test that the output of `data`
-indeed implements the specified interface.
+Extract from `LearnAPI.obs(learner, data)`, after applying `apply`, all observations,
+using the data access API specified by `LearnAPI.data_interface(learner)`. Used to test
+that the output of `data` indeed implements the specified interface.
 
 """
-learner_get(learner, data) =  get(learner, data, LearnAPI.data_interface(learner))
+learner_get(learner, data, apply=identity) =
+    get(learner, data, LearnAPI.data_interface(learner), apply)
 
 """
     model_get(model, data)
 
 *Private method.*
 
-Extract from `LearnAPI.obs(model, data)` all observations, using the data access API
-specified by `LearnAPI.data_interface(learner)`, where `learner =
+Extract from `LearnAPI.obs(model, data)`, after applying `apply`, all observations, using
+the data access API specified by `LearnAPI.data_interface(learner)`, where `learner =
 LearnAPI.learner(model)`. Used to test that the output of `data` indeed implements the
 specified interface.
 
 """
-model_get(model, data) = get(model, data, LearnAPI.data_interface(LearnAPI.learner(model)))
+model_get(model, data, apply =identity) =
+    get(model, data, LearnAPI.data_interface(LearnAPI.learner(model)), apply)
 
 
 const INFO_NEAR = "Tried testing for `≈` because `==` failed. "

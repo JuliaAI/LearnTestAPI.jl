@@ -66,7 +66,6 @@ end
         :(LearnAPI.learner),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
-        :(LearnAPI.features),
         :(LearnAPI.transform),
     ),
 )
@@ -138,7 +137,6 @@ end
         :(LearnAPI.learner),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
-        :(LearnAPI.features),
         :(LearnAPI.transform),
         :(LearnTestAPI.rejected), # accessor function not owned by LearnAPI.jl,
     )
