@@ -153,3 +153,66 @@ macro nearly(ex, kwarg_exs...)
         LearnTestAPI.isnear($lhs, $rhs; $(kwarg_exs...))
     end |> esc
 end
+
+"""
+    uniontype(x)
+
+*Private method.*
+
+Try to return the type of `x` "without type parameters". Otherwise, return `Union{}`.
+
+This is a hack, but probably fine for the testing purposes of LearnTestAPI.jl.
+
+```julia
+module A
+struct Foo{T}
+    x::T
+end
+end
+
+julia> x = A.Foo(42)
+Main.A.Foo{Int}(42)
+
+julia> uniontype(typeof(x))
+Main.A.Foo
+```
+
+"""
+function uniontype(T)
+    modl = parentmodule(T)
+    s = string(T)
+    without_params = split(s, '{') |> first
+    T_union = try
+        ex = Meta.parse(without_params)
+        modl.eval(ex)
+    catch
+        Union{}
+    end
+    T_union isa Type && return T_union
+    return Union{}
+end
+
+
+"""
+    functionswith(T)
+
+*Private method.*
+
+Return, as a vector of symbols, a list of LearnAPI functions which have `T` or
+`LearnTestAPI.uniontype(T)` as an argument. Perhaps not a perfect catch-all; see
+[`LearnTestAPI.uniontype`](@ref).
+
+"""
+function functionswith(T)
+    functions = LearnAPI.eval.((LearnAPI.functions()))
+    S = uniontype(T)
+    implemented = vcat(
+        [InteractiveUtils.methodswith(T, f) for f in functions]...,
+        [InteractiveUtils.methodswith(S, f) for f in functions]...,
+    ) |> unique
+
+    map(implemented) do f
+        name = getfield(f, :name)
+        Meta.parse("LearnAPI.$name")
+    end |> unique
+end

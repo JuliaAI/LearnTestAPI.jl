@@ -5,6 +5,7 @@
 
 using LearnAPI
 using Tables
+using LinearAlgebra
 
 # # NAIVE RIDGE REGRESSION WITH NO INTERCEPTS
 
@@ -113,6 +114,7 @@ LearnAPI.strip(model::RidgeFitted) =
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.feature_names),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),
@@ -190,7 +192,6 @@ LearnAPI.strip(model::BabyRidgeFitted) =
         :(LearnAPI.features),
         :(LearnAPI.target),
         :(LearnAPI.predict),
-        :(LearnAPI.feature_importances),
    )
 )
 

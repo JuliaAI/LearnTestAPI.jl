@@ -73,6 +73,10 @@ const FUNCTIONS = """
     Testing that `LearnAPI.functions(learner)` includes $OBLIGATORY_FUNCTIONS.
 
   """
+const ERR_MISSINNG_OBLIGATORIES =
+    "These obligatory functions are missing from the return value of "*
+    "`LearnAPI.functions(learner)`; "
+
 const FUNCTIONS3 = """
 
     Testing that `LearnAPI.functions(learner)` includes `:(LearnAPI.features).`
@@ -117,10 +121,15 @@ const LEARNER = """
   """
 const FUNCTIONS2 = """
 
-    Checking for overloaded functions missing from `LearnAPI.functions(learner)`.  Run
-    `??LearnAPI.functions` for a checklist.
+    Checking for overloaded LearnAPI.jl functions missing from the return value of
+    `LearnAPI.functions(learner)`. Run `??LearnAPI.functions` for a
+    checklist.
 
   """
+const ERR_MISSING_FUNCTIONS =
+    "The following overloaded functions are missing from the return value of"*
+    "`LearnAPI.functions(learner)`: "
+
 const OBS = """
 
     Attempting to call `observations = obs(learner, data)`.
@@ -282,7 +291,6 @@ const TRANSFORM_ON_SELECTIONS2 = """
     `verbosity=1` for further explanation of `model3` and `X3`.
 
   """
-
 const TARGET = """
 
     Attempting to call `LearnAPI.target(learner, observations)` (fallback returns
@@ -303,6 +311,30 @@ const TARGET_NOT_IN_FUNCTIONS = """
 const TARGET_SELECTIONS = """
 
     Checking that all observations can be extracted from `LearnAPI.target(learner,
+    observations)` using the data interface declared by
+    `LearnAPI.data_interface(learner)`.
+
+  """
+const WEIGHTS = """
+
+    Attempting to call `LearnAPI.weights(learner, observations)` (fallback returns
+    `nothing`).
+
+  """
+const WEIGHTS_IN_FUNCTIONS = """
+
+    Checking that `:(LearnAPI.weights)` is included in `LearnAPI.functions(learner)`.
+
+  """
+const WEIGHTS_NOT_IN_FUNCTIONS = """
+
+    Checking that `:(LearnAPI.weights)` is excluded from `LearnAPI.functions(learner)`, as
+    `LearnAPI.weights` has not been overloaded.
+
+  """
+const WEIGHTS_SELECTIONS = """
+
+    Checking that all observations can be extracted from `LearnAPI.weights(learner,
     observations)` using the data interface declared by
     `LearnAPI.data_interface(learner)`.
 
@@ -460,7 +492,13 @@ macro testapi(learner, data...)
         _functions = LearnAPI.functions(learner)
 
         LearnTestAPI.@logged_testset $FUNCTIONS verbosity begin
-            Test.@test issubset(LearnAPI.functions()[1:4], _functions)
+            awol = setdiff(LearnAPI.functions()[1:4], _functions)
+            if isempty(awol)
+                Test.@test true
+            else
+                @error ERR_MISSINNG_OBLIGATORIES*string(awol)
+                Test.@test false
+            end
         end
 
         if !_is_static
@@ -514,20 +552,20 @@ macro testapi(learner, data...)
                 Test.@test LearnAPI.learner(LearnAPI.strip(model)) == learner
             end
 
-            implemented_methods = map(
-                vcat(
-                    InteractiveUtils.methodswith(typeof(learner), LearnAPI),
-                    InteractiveUtils.methodswith(typeof(model), LearnAPI),
-                )) do f
-                    name = getfield(f, :name)
-                    Meta.parse("LearnAPI.$name")
-                end |> unique
-
-            implemented_methods =
-                intersect(implemented_methods, LearnAPI.functions())
+            # try to catch as many implemented methods as possible:
+            implemented = vcat(
+                LearnTestAPI.functionswith(typeof(learner)),
+                LearnTestAPI.functionswith(typeof(model)),
+            ) |> unique
 
             LearnTestAPI.@logged_testset $FUNCTIONS2 verbosity begin
-                Test.@test all(f -> f in _functions, implemented_methods)
+                awol = setdiff(implemented, _functions)
+                if isempty(awol)
+                    Test.@test true
+                else
+                    @error ERR_MISSING_FUNCTIONS*string(awol)
+                    Test.@test false
+                end
             end
 
             observations = LearnTestAPI.@logged_testset $OBS verbosity begin
@@ -757,6 +795,8 @@ macro testapi(learner, data...)
                 end
             end
 
+            # target
+
             _y = LearnTestAPI.@logged_testset $TARGET verbosity begin
                 LearnAPI.target(learner, observations)
             end
@@ -778,18 +818,49 @@ macro testapi(learner, data...)
                 end
             end
 
+            # weights
+
+            _w = LearnTestAPI.@logged_testset $WEIGHTS verbosity begin
+                LearnAPI.weights(learner, observations)
+            end
+
+            if !(isnothing(_w))
+                LearnTestAPI.@logged_testset $WEIGHTS_IN_FUNCTIONS verbosity begin
+                    Test.@test :(LearnAPI.weights) in _functions
+                end
+                w = LearnTestAPI.@logged_testset $WEIGHTS_SELECTIONS verbosity begin
+                    LearnTestAPI.learner_get(
+                        learner,
+                        data,
+                        data->LearnAPI.weights(learner, data),
+                    )
+                end
+            else
+                LearnTestAPI.@logged_testset $WEIGHTS_NOT_IN_FUNCTIONS verbosity begin
+                    Test.@test !(:(LearnAPI.weights) in _functions)
+                end
+            end
+
+            # accessor functions
+
+#             LearnTestAPI.@logged_testset $ACCESSOR_FUNCTIONS begin
+# ;;;            implemented_methods =
+#                 intersect(implemented_methods, LearnAPI.functions())
+
+
+
+
         end # for loop over datasets
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
         nothing
     end # quote
 end # macro
 
-
-
 include("learners/static_algorithms.jl")
 include("learners/regression.jl")
 include("learners/ensembling.jl")
-#include("learners/gradient_descent.jl")
+# next learner excluded because of heavy dependencies:
+# include("learners/gradient_descent.jl")
 include("learners/incremental_algorithms.jl")
 include("learners/dimension_reduction.jl")
 
