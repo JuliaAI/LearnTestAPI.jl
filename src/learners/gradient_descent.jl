@@ -1,7 +1,8 @@
+# THIS FILE IS NOT INCLUDED
+
 # This file defines:
 
 # - `PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.default_rng())
-
 using LearnAPI
 using Random
 using Statistics
@@ -149,18 +150,24 @@ end
 LearnAPI.obs(::PerceptronClassifier, observations::PerceptronClassifierObs) =
     observations # involutivity
 
+# helper:
+function decode(y_hot, classes)
+    n = size(y_hot, 2)
+    [only(classes[y_hot[:,i]]) for i in 1:n]
+end
+
 # implement `RadomAccess()` interface for output of `obs`:
-Base.length(observations::PerceptronClassifierObs) = length(observations.y)
-Base.getindex(observations, I) = PerceptronClassifierObs(
-    (@view observations.X[:, I]),
-    (@view observations.y[I]),
+Base.length(observations::PerceptronClassifierObs) = size(observations.y_hot, 2)
+Base.getindex(observations::PerceptronClassifierObs, I) = PerceptronClassifierObs(
+    observations.X[:, I],
+    observations.y_hot[:, I],
     observations.classes,
 )
 
 LearnAPI.target(
     learner::PerceptronClassifier,
     observations::PerceptronClassifierObs,
-) = observations.y
+) = decode(observations.y_hot, observations.classes)
 
 LearnAPI.features(
     learner::PerceptronClassifier,

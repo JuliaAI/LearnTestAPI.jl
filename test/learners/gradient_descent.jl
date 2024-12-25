@@ -1,3 +1,8 @@
+# THIS FILE IS NOT INCLUDED BY /test/runtests.jl because of heavy dependencies.  The
+# source file, "/src/learners/gradient_descent.jl" is not included in the package, but
+# exits as a learner exemplar. Next line manually loads the source:
+include(joinpath(@__DIR__, "..", "..", "src", "learners", "gradient_descent.jl")
+
 using Test
 using LearnAPI
 using LearnTestAPI
@@ -33,10 +38,11 @@ Xtest = X[:, test];
 ytrain = y[train];
 ytest = y[test];
 
-rng = StableRNG(123) learner =
-    LearnTestAPI.PerceptronClassifier(; optimiser=Optimisers.Adam(0.01), epochs=40, rng)
+rng = StableRNG(123)
+learner =
+    PerceptronClassifier(; optimiser=Optimisers.Adam(0.01), epochs=40, rng)
 
-@testapi learner (X, y) verbosity=0
+@testapi learner (X, y) verbosity=1
 
 @testset "PerceptronClassfier" begin
     @test LearnAPI.clone(learner) == learner
