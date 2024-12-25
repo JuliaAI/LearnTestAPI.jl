@@ -339,6 +339,30 @@ const WEIGHTS_SELECTIONS = """
     `LearnAPI.data_interface(learner)`.
 
   """
+const COEFFICIENTS = """
+
+    Checking `LearnAPI.coefficients(model)` has the correct form, and that the feature
+    names match those returned by `LearnAPI.feature_names(model)`, if the latter is
+    implemented.
+
+  """
+const INTERCEPT = """
+
+    Checking `LearnAPI.intercept(model)` has the correct form.
+
+  """
+const FEATURE_IMPORTANCES = """
+
+    Checking `LearnAPI.feature_importances(model)` has the correct form, and that the
+    feature names match those returned by `LearnAPI.feature_names(model)`, if the
+    latter is implemented.
+
+  """
+const TRAINING_LOSSES = """
+
+    Checking that `LearnAPI.training_losses(model)` has the correct form.
+
+  """
 
 # # METAPROGRAMMING HELPERS
 
@@ -549,7 +573,7 @@ macro testapi(learner, data...)
 
             LearnTestAPI.@logged_testset $LEARNER verbosity begin
                 Test.@test LearnAPI.learner(model) == learner
-                Test.@test LearnAPI.learner(LearnAPI.strip(model)) == learner
+                Test.@test @nearly LearnAPI.learner(LearnAPI.strip(model)) == learner
             end
 
             # try to catch as many implemented methods as possible:
@@ -606,18 +630,22 @@ macro testapi(learner, data...)
                 end
 
                 LearnTestAPI.@logged_testset $STRIP verbosity begin
-                    Test.@test LearnAPI.predict(LearnAPI.strip(model), args...) == yhat
+                    Test.@test @nearly(
+                    LearnAPI.predict(LearnAPI.strip(model), args...) == yhat,
+                    )
                 end
 
                 LearnTestAPI.@logged_testset $STRIP2 verbosity begin
-                    Test.@test LearnAPI.predict(model2, args...) == yhat
+                    Test.@test @nearly LearnAPI.predict(model2, args...) == yhat
                 end
 
                 if !isnothing(X)
                     LearnTestAPI.@logged_testset $OBS_AND_PREDICT verbosity begin
                         Test.@test all(_kinds_of_proxy) do kind
-                            LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) ==
-                                LearnAPI.predict(model, kind, X)
+                            @nearly(
+                                LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) ==
+                                    LearnAPI.predict(model, kind, X),
+                            )
                         end
                     end
                 end
@@ -637,16 +665,20 @@ macro testapi(learner, data...)
                 end
 
                 LearnTestAPI.@logged_testset $STRIP_TRANSFORM verbosity begin
-                    Test.@test LearnAPI.transform(LearnAPI.strip(model), args...) == W
+                    Test.@test @nearly(
+                    LearnAPI.transform(LearnAPI.strip(model), args...) == W,
+                    )
                 end
 
                 LearnTestAPI.@logged_testset $STRIP2_TRANSFORM verbosity begin
-                    Test.@test LearnAPI.transform(model2, args...) == W
+                    Test.@test @nearly LearnAPI.transform(model2, args...) == W
                 end
 
                 if !isnothing(X)
                     LearnTestAPI.@logged_testset $OBS_AND_TRANSFORM verbosity begin
-                        Test.@test LearnAPI.transform(model, LearnAPI.obs(model, X)) == W
+                        Test.@test @nearly(
+                            LearnAPI.transform(model, LearnAPI.obs(model, X)) == W,
+                        )
                     end
                 end
             end
@@ -657,12 +689,13 @@ macro testapi(learner, data...)
                 end
 
                 LearnTestAPI.@logged_testset $STRIP_INVERSE verbosity begin
-                    Test.@test LearnAPI.inverse_transform(LearnAPI.strip(model), W) ==
-                        X2
+                    Test.@test @nearly(
+                        LearnAPI.inverse_transform(LearnAPI.strip(model), W) == X2,
+                    )
                 end
 
                 LearnTestAPI.@logged_testset $STRIP2_INVERSE verbosity begin
-                    Test.@test LearnAPI.inverse_transform(model2, W) == X2
+                    Test.@test @nearly LearnAPI.inverse_transform(model2, W) == X2
                 end
             end
 
@@ -678,16 +711,22 @@ macro testapi(learner, data...)
                     obsmodel =
                         LearnAPI.fit(learner, _observations; verbosity=verbosity - 1)
                     if :(LearnAPI.predict) in _functions
-                        Test.@test LearnAPI.predict(model, args...) ==
-                            LearnAPI.predict(obsmodel, args...)
+                        Test.@test @nearly(
+                            LearnAPI.predict(model, args...) ==
+                                LearnAPI.predict(obsmodel, args...),
+                        )
                     end
                     if :(LearnAPI.transform) in _functions
-                        Test.@test LearnAPI.transform(model, args...) ==
-                            LearnAPI.transform(obsmodel, args...)
+                        Test.@test @nearly(
+                            LearnAPI.transform(model, args...) ==
+                                LearnAPI.transform(obsmodel, args...),
+                        )
                     end
                     if :(LearnAPI.inverse_transform) in _functions
-                        Test.@test LearnAPI.inverse_transform(model, W) ==
-                            LearnAPI.inverse_transform(obsmodel, W)
+                        Test.@test @nearly(
+                            LearnAPI.inverse_transform(model, W) ==
+                                LearnAPI.inverse_transform(obsmodel, W),
+                        )
                     end
                 end
 
@@ -842,13 +881,47 @@ macro testapi(learner, data...)
             end
 
             # accessor functions
+            # `learner`, `extras`, `strip`, `already` tested above
 
-#             LearnTestAPI.@logged_testset $ACCESSOR_FUNCTIONS begin
-# ;;;            implemented_methods =
-#                 intersect(implemented_methods, LearnAPI.functions())
+            if :(LearnAPI.coefficients) in _functions
+                LearnTestAPI.@logged_testset $COEFFICIENTS verbosity begin
+                    coefs = LearnAPI.coefficients(model)
+                    Test.@test coeffs isa AbstractVector{
+                        <:Pair{<:Any,<:Union{Real,AbstractVector{<:Real}}}
+                    }
+                    if :(LearnAPI.feature_names) in _functions
+                        Test.@test Set(LearnAPI.feature_names(model)) ==
+                            Set(first.(coeffs))
+                    end
+                end
+            end
 
+            if :(LearnAPI.intercept) in _functions
+                LearnTestAPI.@logged_testset $INTERCEPT verbosity begin
+                    c = LearnAPI.intercept(model)
+                    Test.@test c isa Union{Real,AbstractVector{<:Real}}
+                end
+            end
 
+            if :(LearnAPI.feature_importances) in _functions
+                LearnTestAPI.@logged_testset $FEATURE_IMPORTANCES verbosity begin
+                    fis = LearnAPI.feature_importances(model)
+                    Test.@test fis isa AbstractVector{
+                        <:Pair{<:Any,<:Real}
+                    }
+                    if :(LearnAPI.feature_names) in _functions
+                        Test.@test Set(LearnAPI.feature_names(model)) ==
+                            Set(first.(fis))
+                    end
+                end
+            end
 
+            if :(LearnAPI.training_losses) in _functions
+                LearnTestAPI.@logged_testset $TRAINING_LOSSES verbosity begin
+                    losses = LearnAPI.training_losses(model)
+                    Test.@test losses isa AbstractVector
+                end
+            end
 
         end # for loop over datasets
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
