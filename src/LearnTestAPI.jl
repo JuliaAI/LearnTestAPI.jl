@@ -67,7 +67,7 @@ const WARN_DOCUMENTATION = """
 
   """
 const OBLIGATORY_FUNCTIONS =
-    join(map(ex->"`:$ex`", LearnAPI.functions()[1:4]), ", ", " and ")
+    join(map(ex->"`:$ex`", LearnAPI.functions()[1:5]), ", ", " and ")
 const FUNCTIONS = """
 
     Testing that `LearnAPI.functions(learner)` includes $OBLIGATORY_FUNCTIONS.
@@ -516,7 +516,7 @@ macro testapi(learner, data...)
         _functions = LearnAPI.functions(learner)
 
         LearnTestAPI.@logged_testset $FUNCTIONS verbosity begin
-            awol = setdiff(LearnAPI.functions()[1:4], _functions)
+            awol = setdiff(LearnAPI.functions()[1:5], _functions)
             if isempty(awol)
                 Test.@test true
             else

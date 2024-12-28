@@ -151,6 +151,7 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),
@@ -530,6 +531,7 @@ end
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),

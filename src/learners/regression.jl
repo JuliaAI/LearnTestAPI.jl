@@ -114,6 +114,7 @@ LearnAPI.strip(model::RidgeFitted) =
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.feature_names),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
@@ -187,6 +188,7 @@ LearnAPI.strip(model::BabyRidgeFitted) =
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),

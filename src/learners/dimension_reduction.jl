@@ -97,6 +97,7 @@ LearnAPI.strip(model::TruncatedSVDFitted) =
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),

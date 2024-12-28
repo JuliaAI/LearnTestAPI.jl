@@ -324,6 +324,7 @@ LearnAPI.training_losses(model::PerceptronClassifierFitted) = model.losses
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
+        :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
         :(LearnAPI.features),
