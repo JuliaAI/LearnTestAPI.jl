@@ -20,7 +20,7 @@ data = (X, y)
 # # RIDGE
 
 learner = LearnTestAPI.Ridge(lambda=0.5)
-@testapi learner data verbosity=1
+@testapi learner data verbosity=0
 
 @testset "extra tests for ridge regression" begin
     @test :(LearnAPI.obs) in LearnAPI.functions(learner)
@@ -82,7 +82,7 @@ end
 # # BABY RIDGE
 
 learner = LearnTestAPI.BabyRidge(lambda=0.5)
-@testapi learner data verbosity=1
+@testapi learner data verbosity=0
 
 @testset "extra tests for baby ridge" begin
     model = fit(learner, Tables.subset(X, train), y[train]; verbosity=0)
