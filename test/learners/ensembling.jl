@@ -34,21 +34,21 @@ learner = LearnTestAPI.Ensemble(atom; n=4, rng)
 
     model = @test_logs(
         (:info, r"Trained 4 ridge"),
-        fit(learner, Xtrain, y[train]; verbosity=1),
+        fit(learner, (Xtrain, y[train]); verbosity=1),
     );
 
     # add 3 atomic models to the ensemble:
-    model = update(model, Xtrain, y[train]; verbosity=0, n=7);
+    model = update(model, (Xtrain, y[train]), :n=>7; verbosity=0);
     ŷ7 = predict(model, Xtest)
 
     # compare with cold restart:
-    model_cold = fit(LearnAPI.clone(learner; n=7), Xtrain, y[train]; verbosity=0);
+    model_cold = fit(LearnAPI.clone(learner, :n=>7), (Xtrain, y[train]); verbosity=0);
     @test ŷ7 ≈ predict(model_cold, Xtest)
 
     # test that we get a cold restart if another hyperparameter is changed:
-    model2 = update(model, Xtrain, y[train]; atom=LearnTestAPI.Ridge(0.05), verbosity=0)
+    model2 = update(model, (Xtrain, y[train]), :atom=>LearnTestAPI.Ridge(0.05); verbosity=0)
     learner2 = LearnTestAPI.Ensemble(LearnTestAPI.Ridge(0.05); n=7, rng)
-    model_cold = fit(learner2, Xtrain, y[train]; verbosity=0)
+    model_cold = fit(learner2, (Xtrain, y[train]); verbosity=0)
     @test predict(model2, Xtest) ≈ predict(model_cold, Xtest)
 
 end
@@ -80,7 +80,7 @@ end
     # update, one tree at a time, until out-of-sample loss is not improving, in sense of
     # "number since best = 6" criterion:
     for ntrees = 2:100
-        model = update(model, (x, y); ntrees, verbosity=0)
+        model = update(model, (x, y), :ntrees => ntrees; verbosity=0)
         time_to_stop(LearnAPI.out_of_sample_losses(model); n=6) && break
     end
     @test length(LearnAPI.trees(model)) < 100

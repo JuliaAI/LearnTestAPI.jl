@@ -30,7 +30,19 @@ end
 """
     Ensemble(atom; rng=Random.default_rng(), n=10)
 
-Instantiate a bagged ensemble of `n` regressors, with base regressor `atom`, etc
+Instantiate a bagged ensemble of `n` regressors, with base regressor `atom`, etc.
+
+```julia
+X = rand(3, 100)
+y = rand(100)
+
+atom = LearnAPI.Ridge()
+learner = LearnTestAPI.Ensemble(atom, n=20)
+model = fit(learner, (X, y))
+
+# increase ensemble size by 5:
+model = update(model, (X, y), :n => 15)
+```
 
 """
 Ensemble(atom; rng=Random.default_rng(), n=10) =
@@ -96,11 +108,16 @@ end
 # hyperparameter updates (e.g, new `atom`) when computing the new atomic
 # models. Otherwise, update is equivalent to retraining from scratch, with the provided
 # hyperparameter updates.
-function LearnAPI.update(model::EnsembleFitted, data; verbosity=1, replacements...)
+function LearnAPI.update(
+    model::EnsembleFitted,
+    data,
+    replacements::Pair{Symbol}...;
+    verbosity=1,
+    )
     learner_old = LearnAPI.learner(model)
-    learner = LearnAPI.clone(learner_old; replacements...)
+    learner = LearnAPI.clone(learner_old, replacements...)
 
-    :n in keys(replacements) || return fit(learner, data; verbosity)
+    :n in first.(replacements) || return fit(learner, data; verbosity)
 
     n = learner.n
     Δn = n - learner_old.n
@@ -140,6 +157,8 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
     LearnAPI.strip.(model.models),
 )
 
+LearnAPI.components(model::EnsembleFitted) = [:atom => model.models,]
+
 # learner traits (note the inclusion of `iteration_parameter`):
 @trait(
     Ensemble,
@@ -158,14 +177,9 @@ LearnAPI.strip(model::EnsembleFitted) = EnsembleFitted(
         :(LearnAPI.target),
         :(LearnAPI.update),
         :(LearnAPI.predict),
+        :(LearnAPI.components),
    )
 )
-
-# convenience method:
-LearnAPI.fit(learner::Ensemble, X, y, extras...; kwargs...) =
-    fit(learner, (X, y, extras...); kwargs...)
-LearnAPI.update(learner::EnsembleFitted, X, y, extras...; kwargs...) =
-    update(learner, (X, y, extras...); kwargs...)
 
 
 # # ENSEMBLE OF EXTREMELY RANDOMIZED TREE STUMP REGRESSORS
@@ -286,10 +300,10 @@ end
 """
     StumpRegressor(; ntrees=10, fraction_train=0.8, rng=Random.default_rng())
 
-Instantiate `StumpRegressor` learner for training using the LearnAPI.jl interface, as in
-the example below. By default, 20% of the data is internally set aside to allow for
-tracking an out-of-sample loss. Internally computed predictions (on the full data) are
-also exposed to the user.
+Instantiate an extremely randomized forest of stump regressors, for training using the
+LearnAPI.jl interface, as in the example below. By default, 20% of the data is internally
+set aside to allow for tracking an out-of-sample loss. Internally computed predictions (on
+the full data) are also exposed to the user.
 
 ```
 x = rand(100)
@@ -318,12 +332,12 @@ Only univariate data is supported. Data is cached and `update(model, data; ...)`
 
 # Algorithm
 
-Predictions in this simplistic algorithm are averages over an ensemble of decision tree
-stumps. Each new stump has it's feature split threshold chosen uniformly at random,
-between the minimum and maximum values present in the training data. Predictions on new
-feature values to the left (resp., right) of the threshold mean values of the target
-for training observations in which the feature is less than (resp., greater than) the
-threshold. This algorithm is not intended for practical application.
+Predictions in this extremely simplistic algorithm (not intended for practical
+application) are averages over an ensemble of decision tree stumps. Each new stump has
+it's feature split threshold chosen uniformly at random, between the minimum and maximum
+values present in the training data. Predictions on new feature values to the left (resp.,
+right) of the threshold are the mean target values for training observations in which the
+feature is less than (resp., greater than) the threshold.
 
 """
 StumpRegressor(; ntrees=10, fraction_train=0.8, rng=Random.default_rng()) =
@@ -409,9 +423,9 @@ end
 
 function LearnAPI.update(
     model::StumpRegressorFitted,
-    data; # ignored as cached
-    verbosity=LearnAPI.default_verbosity(),
-    replacements...,
+    data, # ignored as cached
+    replacements::Pair{Symbol}...;
+    verbosity=1,
     )
 
     learner_old = LearnAPI.learner(model)
@@ -434,7 +448,7 @@ function LearnAPI.update(
     learner_old = learner
     learner = LearnAPI.clone(learner_old; replacements...)
 
-    kys = keys(replacements)
+    kys = first.(replacements)
     :ntrees in kys || return fit(learner, data; verbosity)
     # other replacements are ignored:
     for k in kys

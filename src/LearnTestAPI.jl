@@ -145,7 +145,6 @@ const OBS_INVOLUTIVITY = """
     Testing that `obs(model, obs(model, data)) == obs(model, data)` (involutivity).
 
   """
-
 const SERIALIZATION = """
 
     Checking that `LearnAPI.strip(model)` can be Julia-serialized/deserialized.
@@ -162,7 +161,7 @@ const PREDICT_HAS_NO_FEATURES = """
 const PREDICT_HAS_FEATURES = """
 
     Attempting to call `predict(model, kind, X)` for each `kind` in
-    `LearnAPI.kinds_of_proxy(learner)`.
+    `LearnAPI.kinds_of_proxy(learner)`. Here `X = LearnAPI.features(obs(learner, data))`.
 
   """
 const STRIP = """
@@ -186,7 +185,7 @@ const OBS_AND_PREDICT = """
 const TRANSFORM_HAS_NO_FEATURES = """
 
     Attempting to call `transform(model)` (and not `transform(model, X)`, because
-    `features(obs(learner, data)) == nothing`)..
+    `features(obs(learner, data)) == nothing`).
 
   """
 const TRANSFORM_HAS_FEATURES = """
@@ -360,9 +359,40 @@ const FEATURE_IMPORTANCES = """
   """
 const TRAINING_LOSSES = """
 
-    Checking that `LearnAPI.training_losses(model)` has the correct form.
+    Checking that `LearnAPI.training_losses(model)` is a vector.
 
   """
+const OUT_OF_SAMPLE_LOSSES = """
+
+    Checking that `LearnAPI.out_of_sample_losses(model)` is a vector.
+
+  """
+const TRAINING_SCORES = """
+
+    Checking that `LearnAPI.training_scores(model)` is a vector.
+
+  """
+const PREDICTIONS = """
+
+    Checking that `LearnAPI.predictions(model)` and `predict(model, X)` are approximately
+    equal.
+
+  """
+const ERR_STATIC_PREDICTIONS = ErrorException(
+    "`LearnAPI.functions(learner)` includes `:(LearnAPI.predictions)` but you may "*
+    "not implement `LearnAPI.predictions` for static learners. "
+)
+
+const OUT_OF_SAMPLE_INDICES = """
+
+    Checking that `LearnAPI.out_of_sample_indices(model)` is a vector of integers.
+
+  """
+const ERR_OOS_INDICES = ErrorException(
+    "`:(LearnAPI.out_of_sample_indices)` is in the return value of "*
+        "`LearnAPI.functions(learner)` but `:(LearnAPI.predictions)` is not."
+)
+
 
 # # METAPROGRAMMING HELPERS
 
@@ -570,6 +600,17 @@ macro testapi(learner, data...)
                         LearnAPI.fit(learner, data; verbosity=verbosity-1)
                     end
             end
+
+            # if !_is_static && :(LearnAPI.update) in _functions
+            #     LearnTestAPI.@logged_testset $UPDATE verbosity begin
+            #         newmodel = LearnAPI.update(model, data, verbosity)
+            #         iter = LearnAPI.iteration_parameter(learner)
+            #         if !isnothing(iter)
+            #             n = getproperty(learner, iter)
+            #             # I AM HERE
+            #         end
+            #     end
+            # end
 
             LearnTestAPI.@logged_testset $LEARNER verbosity begin
                 Test.@test LearnAPI.learner(model) == learner
@@ -922,6 +963,41 @@ macro testapi(learner, data...)
                     Test.@test losses isa AbstractVector
                 end
             end
+
+            if :(LearnAPI.out_of_sample_losses) in _functions
+                LearnTestAPI.@logged_testset $OUT_OF_SAMPLE_LOSSES verbosity begin
+                    losses = LearnAPI.out_of_sample_losses(model)
+                    Test.@test losses isa AbstractVector
+                end
+            end
+
+            if :(LearnAPI.training_scores) in _functions
+                LearnTestAPI.@logged_testset $TRAINING_SCORES verbosity begin
+                    losses = LearnAPI.training_scores(model)
+                    Test.@test losses isa AbstractVector
+                end
+            end
+
+            if :(LearnAPI.predictions) in _functions
+                _is_static && throw(ERR_STATIC_PREDICTIONS)
+                LearnTestAPI.@logged_testset $PREDICTIONS verbosity begin
+                    Test.@test @nearly(
+                        LearnAPI.predictions(model) == LearnAPI.predict(model, X),
+                    )
+                end
+            end
+
+            if :(LearnAPI.out_of_sample_indices) in _functions
+                :(LearnAPI.predictions) in _functions || throw(ERR_OOS_INDICES)
+                LearnTestAPI.@logged_testset $OUT_OF_SAMPLE_INDICES verbosity begin
+                    Test.@test(
+                        LearnAPI.out_of_sample_indices(model) isa AbstractVector{<:Integer}
+                    )
+                end
+            end
+
+
+
 
         end # for loop over datasets
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
