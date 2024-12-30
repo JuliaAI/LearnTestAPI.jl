@@ -325,17 +325,17 @@ const WEIGHTS_IN_FUNCTIONS = """
     Checking that `:(LearnAPI.weights)` is included in `LearnAPI.functions(learner)`.
 
   """
-const WEIGHTS_NOT_IN_FUNCTIONS = """
-
-    Checking that `:(LearnAPI.weights)` is excluded from `LearnAPI.functions(learner)`, as
-    `LearnAPI.weights` has not been overloaded.
-
-  """
 const WEIGHTS_SELECTIONS = """
 
     Checking that all observations can be extracted from `LearnAPI.weights(learner,
     observations)` using the data interface declared by
     `LearnAPI.data_interface(learner)`.
+
+  """
+const WEIGHTS_NOT_IN_FUNCTIONS = """
+
+    Checking that `:(LearnAPI.weights)` is excluded from `LearnAPI.functions(learner)`, as
+    `LearnAPI.weights` has not been overloaded.
 
   """
 const COEFFICIENTS = """
@@ -345,6 +345,28 @@ const COEFFICIENTS = """
     implemented.
 
   """
+const UPDATE = """
+
+    Calling `LearnAPI.update(model, data; verbosity=0)`.
+
+  """
+const ERR_STATIC_UPDATE = ErrorException(
+    "`(LearnAPI.update)` is in `LearnAPI.functions(learner)` but "*
+        "`LearnAPI.is_static(learner)` is `true`. You cannot implement `update` "*
+        "for static learners. "
+)
+const UPDATE_ITERATIONS = """
+
+    Attempting to increase number of iterations by one with an `update` call, giving a new
+    model `newmodel`. Checking that `LearnAPI.learner(newmodel)` reflects the iteration
+    update. Checking that retraining from scratch with the extra iteration gives,
+    approximately, the same predictions/transformations.
+
+  """
+const ERR_BAD_UPDATE = ErrorException(
+"Updating iterations by one and instead retraining from scratch are giving "*
+    "different outcomes. "
+)
 const INTERCEPT = """
 
     Checking `LearnAPI.intercept(model)` has the correct form.
@@ -514,6 +536,7 @@ macro testapi(learner, data...)
         import LearnTestAPI.MLUtils
         import LearnTestAPI.LearnAPI
         import LearnTestAPI.InteractiveUtils
+        import LearnTestAPI: @logged_testset, @nearly
 
         learner = $(esc(learner))
         verbosity=$verbosity
@@ -527,12 +550,12 @@ macro testapi(learner, data...)
             verbosity > -1 && @info "running @testapi - $_human_name "*$QUIET
         end
 
-        LearnTestAPI.@logged_testset $CONSTRUCTOR verbosity begin
+        @logged_testset $CONSTRUCTOR verbosity begin
             Test.@test LearnAPI.clone(learner) == learner
         end
 
         if !LearnAPI.is_composite(learner)
-            LearnTestAPI.@logged_testset $IS_COMPOSITE verbosity begin
+            @logged_testset $IS_COMPOSITE verbosity begin
                 Test.@test all(propertynames(learner)) do name
                     !LearnAPI.is_learner(getproperty(learner, name))
                 end
@@ -545,7 +568,7 @@ macro testapi(learner, data...)
 
         _functions = LearnAPI.functions(learner)
 
-        LearnTestAPI.@logged_testset $FUNCTIONS verbosity begin
+        @logged_testset $FUNCTIONS verbosity begin
             awol = setdiff(LearnAPI.functions()[1:5], _functions)
             if isempty(awol)
                 Test.@test true
@@ -556,17 +579,17 @@ macro testapi(learner, data...)
         end
 
         if !_is_static
-            LearnTestAPI.@logged_testset $FUNCTIONS3 verbosity begin
+            @logged_testset $FUNCTIONS3 verbosity begin
                 Test.@test :(LearnAPI.features) in _functions
             end
         else
-            LearnTestAPI.@logged_testset $FUNCTIONS4 verbosity begin
+            @logged_testset $FUNCTIONS4 verbosity begin
                 Test.@test !(:(LearnAPI.features) in _functions)
             end
         end
 
         _tags = LearnAPI.tags(learner)
-        LearnTestAPI.@logged_testset $TAGS verbosity begin
+        @logged_testset $TAGS verbosity begin
             Test.@test _tags isa Tuple
             Test.@test issubset(
                 _tags,
@@ -576,7 +599,7 @@ macro testapi(learner, data...)
 
         if :(LearnAPI.predict) in _functions
             _kinds_of_proxy = LearnAPI.kinds_of_proxy(learner)
-            LearnTestAPI.@logged_testset $KINDS_OF_PROXY verbosity begin
+            @logged_testset $KINDS_OF_PROXY verbosity begin
                 Test.@test !isempty(_kinds_of_proxy)
                 Test.@test _kinds_of_proxy isa Tuple
                 Test.@test all(_kinds_of_proxy) do k
@@ -591,28 +614,17 @@ macro testapi(learner, data...)
 
             if _is_static
                 model =
-                    LearnTestAPI.@logged_testset $FIT_IS_STATIC verbosity begin
+                    @logged_testset $FIT_IS_STATIC verbosity begin
                         LearnAPI.fit(learner; verbosity=verbosity-1)
                     end
             else
                 model =
-                    LearnTestAPI.@logged_testset $FIT_IS_NOT_STATIC verbosity begin
+                    @logged_testset $FIT_IS_NOT_STATIC verbosity begin
                         LearnAPI.fit(learner, data; verbosity=verbosity-1)
                     end
             end
 
-            # if !_is_static && :(LearnAPI.update) in _functions
-            #     LearnTestAPI.@logged_testset $UPDATE verbosity begin
-            #         newmodel = LearnAPI.update(model, data, verbosity)
-            #         iter = LearnAPI.iteration_parameter(learner)
-            #         if !isnothing(iter)
-            #             n = getproperty(learner, iter)
-            #             # I AM HERE
-            #         end
-            #     end
-            # end
-
-            LearnTestAPI.@logged_testset $LEARNER verbosity begin
+            @logged_testset $LEARNER verbosity begin
                 Test.@test LearnAPI.learner(model) == learner
                 Test.@test @nearly LearnAPI.learner(LearnAPI.strip(model)) == learner
             end
@@ -623,7 +635,7 @@ macro testapi(learner, data...)
                 LearnTestAPI.functionswith(typeof(model)),
             ) |> unique
 
-            LearnTestAPI.@logged_testset $FUNCTIONS2 verbosity begin
+            @logged_testset $FUNCTIONS2 verbosity begin
                 awol = setdiff(implemented, _functions)
                 if isempty(awol)
                     Test.@test true
@@ -633,22 +645,22 @@ macro testapi(learner, data...)
                 end
             end
 
-            observations = LearnTestAPI.@logged_testset $OBS verbosity begin
+            observations = @logged_testset $OBS verbosity begin
                 obs(learner, data)
             end
 
-            X = LearnTestAPI.@logged_testset $FEATURES verbosity begin
+            X = @logged_testset $FEATURES verbosity begin
                 LearnAPI.features(learner, observations)
             end
 
             if !(isnothing(X))
-                LearnTestAPI.@logged_testset $OBS_INVOLUTIVITY verbosity begin
+                @logged_testset $OBS_INVOLUTIVITY verbosity begin
                     _observations = LearnAPI.obs(model, X)
                     Test.@test LearnAPI.obs(model, _observations) == _observations
                 end
             end
 
-            model2 = LearnTestAPI.@logged_testset $SERIALIZATION verbosity begin
+            model2 = @logged_testset $SERIALIZATION verbosity begin
                 small_model = LearnAPI.strip(model)
                 io = IOBuffer()
                 Serialization.serialize(io, small_model)
@@ -665,23 +677,23 @@ macro testapi(learner, data...)
                     args = (X,)
                     message = $PREDICT_HAS_FEATURES
                 end
-                yhat = LearnTestAPI.@logged_testset message verbosity begin
+                yhat = @logged_testset message verbosity begin
                     [LearnAPI.predict(model, k, args...) for k in _kinds_of_proxy]
                     LearnAPI.predict(model, args...)
                 end
 
-                LearnTestAPI.@logged_testset $STRIP verbosity begin
+                @logged_testset $STRIP verbosity begin
                     Test.@test @nearly(
                     LearnAPI.predict(LearnAPI.strip(model), args...) == yhat,
                     )
                 end
 
-                LearnTestAPI.@logged_testset $STRIP2 verbosity begin
+                @logged_testset $STRIP2 verbosity begin
                     Test.@test @nearly LearnAPI.predict(model2, args...) == yhat
                 end
 
                 if !isnothing(X)
-                    LearnTestAPI.@logged_testset $OBS_AND_PREDICT verbosity begin
+                    @logged_testset $OBS_AND_PREDICT verbosity begin
                         Test.@test all(_kinds_of_proxy) do kind
                             @nearly(
                                 LearnAPI.predict(model, kind, LearnAPI.obs(model, X)) ==
@@ -701,22 +713,22 @@ macro testapi(learner, data...)
                     args = (X,)
                     message = $TRANSFORM_HAS_FEATURES
                 end
-                W = LearnTestAPI.@logged_testset message verbosity begin
+                W = @logged_testset message verbosity begin
                     LearnAPI.transform(model, args...)
                 end
 
-                LearnTestAPI.@logged_testset $STRIP_TRANSFORM verbosity begin
+                @logged_testset $STRIP_TRANSFORM verbosity begin
                     Test.@test @nearly(
                     LearnAPI.transform(LearnAPI.strip(model), args...) == W,
                     )
                 end
 
-                LearnTestAPI.@logged_testset $STRIP2_TRANSFORM verbosity begin
+                @logged_testset $STRIP2_TRANSFORM verbosity begin
                     Test.@test @nearly LearnAPI.transform(model2, args...) == W
                 end
 
                 if !isnothing(X)
-                    LearnTestAPI.@logged_testset $OBS_AND_TRANSFORM verbosity begin
+                    @logged_testset $OBS_AND_TRANSFORM verbosity begin
                         Test.@test @nearly(
                             LearnAPI.transform(model, LearnAPI.obs(model, X)) == W,
                         )
@@ -725,30 +737,30 @@ macro testapi(learner, data...)
             end
 
             if :(LearnAPI.inverse_transform) in _functions && !isnothing(X)
-                X2 = LearnTestAPI.@logged_testset $INVERSE_TRANSFORM verbosity begin
+                X2 = @logged_testset $INVERSE_TRANSFORM verbosity begin
                     LearnAPI.inverse_transform(model, W)
                 end
 
-                LearnTestAPI.@logged_testset $STRIP_INVERSE verbosity begin
+                @logged_testset $STRIP_INVERSE verbosity begin
                     Test.@test @nearly(
                         LearnAPI.inverse_transform(LearnAPI.strip(model), W) == X2,
                     )
                 end
 
-                LearnTestAPI.@logged_testset $STRIP2_INVERSE verbosity begin
+                @logged_testset $STRIP2_INVERSE verbosity begin
                     Test.@test @nearly LearnAPI.inverse_transform(model2, W) == X2
                 end
             end
 
             if !_is_static
                 _observations =
-                    LearnTestAPI.@logged_testset $OBS_INVOLUTIVITY_FIT verbosity begin
+                    @logged_testset $OBS_INVOLUTIVITY_FIT verbosity begin
                         _observations = LearnAPI.obs(learner, data)
                         Test.@test LearnAPI.obs(learner, _observations) == _observations
                         _observations
                     end
 
-                LearnTestAPI.@logged_testset $OBS_AND_FIT verbosity begin
+                @logged_testset $OBS_AND_FIT verbosity begin
                     obsmodel =
                         LearnAPI.fit(learner, _observations; verbosity=verbosity - 1)
                     if :(LearnAPI.predict) in _functions
@@ -772,7 +784,7 @@ macro testapi(learner, data...)
                 end
 
                 model3 =
-                    LearnTestAPI.@logged_testset $SELECTED_FOR_FIT verbosity begin
+                    @logged_testset $SELECTED_FOR_FIT verbosity begin
                         data3 = LearnTestAPI.learner_get(learner, data)
                         if _data_interface isa LearnAPI.RandomAccess
                             LearnAPI.fit(learner, data3; verbosity=verbosity-1)
@@ -783,13 +795,13 @@ macro testapi(learner, data...)
             end
 
             if !isnothing(X)
-                X3 = LearnTestAPI.@logged_testset $SELECTED verbosity begin
+                X3 = @logged_testset $SELECTED verbosity begin
                     LearnTestAPI.model_get(model, X)
                 end
                 if _data_interface isa LearnAPI.RandomAccess
                     if :(LearnAPI.predict) in _functions
                         if _is_static
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $PREDICT_ON_SELECTIONS1,
                                 verbosity,
                                 begin
@@ -797,7 +809,7 @@ macro testapi(learner, data...)
                                 end,
                             )
                         else
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $PREDICT_ON_SELECTIONS2,
                                 verbosity,
                                 begin
@@ -810,7 +822,7 @@ macro testapi(learner, data...)
                     end
                     if :(LearnAPI.transform) in _functions
                         if _is_static
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $TRANSFORM_ON_SELECTIONS1,
                                 verbosity,
                                 begin
@@ -818,7 +830,7 @@ macro testapi(learner, data...)
                                 end,
                             )
                         else
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $TRANSFORM_ON_SELECTIONS2,
                                 verbosity,
                                 begin
@@ -832,7 +844,7 @@ macro testapi(learner, data...)
                 elseif _data_interface isa LearnAPI.FiniteIterable
                     if :(LearnAPI.predict) in _functions
                         if _is_static
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $PREDICT_ON_SELECTIONS1,
                                 verbosity,
                                 begin
@@ -840,7 +852,7 @@ macro testapi(learner, data...)
                                 end,
                             )
                         else
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $PREDICT_ON_SELECTIONS2,
                                 verbosity,
                                 begin
@@ -853,7 +865,7 @@ macro testapi(learner, data...)
                     end
                     if :(LearnAPI.transform) in _functions
                         if _is_static
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $TRANSFORM_ON_SELECTIONS1,
                                 verbosity,
                                 begin
@@ -861,7 +873,7 @@ macro testapi(learner, data...)
                                 end,
                             )
                         else
-                            LearnTestAPI.@logged_testset(
+                            @logged_testset(
                                 $TRANSFORM_ON_SELECTIONS2,
                                 verbosity,
                                 begin
@@ -877,15 +889,15 @@ macro testapi(learner, data...)
 
             # target
 
-            _y = LearnTestAPI.@logged_testset $TARGET verbosity begin
+            _y = @logged_testset $TARGET verbosity begin
                 LearnAPI.target(learner, observations)
             end
 
             if !(isnothing(_y))
-                LearnTestAPI.@logged_testset $TARGET_IN_FUNCTIONS verbosity begin
+                @logged_testset $TARGET_IN_FUNCTIONS verbosity begin
                     Test.@test :(LearnAPI.target) in _functions
                 end
-                y = LearnTestAPI.@logged_testset $TARGET_SELECTIONS verbosity begin
+                y = @logged_testset $TARGET_SELECTIONS verbosity begin
                     LearnTestAPI.learner_get(
                         learner,
                         data,
@@ -893,22 +905,22 @@ macro testapi(learner, data...)
                     )
                 end
             else
-                LearnTestAPI.@logged_testset $TARGET_NOT_IN_FUNCTIONS verbosity begin
+                @logged_testset $TARGET_NOT_IN_FUNCTIONS verbosity begin
                     Test.@test !(:(LearnAPI.target) in _functions)
                 end
             end
 
             # weights
 
-            _w = LearnTestAPI.@logged_testset $WEIGHTS verbosity begin
+            _w = @logged_testset $WEIGHTS verbosity begin
                 LearnAPI.weights(learner, observations)
             end
 
             if !(isnothing(_w))
-                LearnTestAPI.@logged_testset $WEIGHTS_IN_FUNCTIONS verbosity begin
+                @logged_testset $WEIGHTS_IN_FUNCTIONS verbosity begin
                     Test.@test :(LearnAPI.weights) in _functions
                 end
-                w = LearnTestAPI.@logged_testset $WEIGHTS_SELECTIONS verbosity begin
+                w = @logged_testset $WEIGHTS_SELECTIONS verbosity begin
                     LearnTestAPI.learner_get(
                         learner,
                         data,
@@ -916,8 +928,50 @@ macro testapi(learner, data...)
                     )
                 end
             else
-                LearnTestAPI.@logged_testset $WEIGHTS_NOT_IN_FUNCTIONS verbosity begin
+                @logged_testset $WEIGHTS_NOT_IN_FUNCTIONS verbosity begin
                     Test.@test !(:(LearnAPI.weights) in _functions)
+                end
+            end
+
+            # update
+
+            if :(LearnAPI.update) in _functions
+                _is_static && throw($ERR_STATIC_UPDATE)
+                @logged_testset $UPDATE verbosity begin
+                    LearnAPI.update(model, data; verbosity=0)
+                end
+                # only test hyperparameter replacement in case of iteration parameter:
+                iter = LearnAPI.iteration_parameter(learner)
+                if !isnothing(iter)
+                    @logged_testset $UPDATE_ITERATIONS verbosity begin
+                        n = getproperty(learner, iter)
+                        newmodel = LearnAPI.update(model, data, iter=>n+1; verbosity=0)
+                        newlearner = LearnAPI.clone(learner, iter=>n+1)
+                        Test.@test LearnAPI.learner(newmodel) == newlearner
+                        abinitiomodel = LearnAPI.fit(newlearner, data; verbosity=0)
+                        # prepare to test `predict` and `transform` are the same for ab
+                        # initio model and for updated model:
+                        if isnothing(X)
+                            args = ()
+                        else
+                            args = (X,)
+                        end
+                        operations = intersect(
+                            _functions,
+                            [:(LearnAPI.predict), :(LearnAPI.transform)],
+                        )
+                        for ex in operations
+                            op = eval(:($ex))
+                            left = op(newmodel, args...)
+                            right = op(newmodel, args...)
+                            agree = @nearly left == right
+                            if agree
+                                Test.@test true
+                            else
+                                @error $ERR_BAD_UPDATE
+                            end
+                        end
+                    end
                 end
             end
 
@@ -925,7 +979,7 @@ macro testapi(learner, data...)
             # `learner`, `extras`, `strip`, `already` tested above
 
             if :(LearnAPI.coefficients) in _functions
-                LearnTestAPI.@logged_testset $COEFFICIENTS verbosity begin
+                @logged_testset $COEFFICIENTS verbosity begin
                     coefs = LearnAPI.coefficients(model)
                     Test.@test coeffs isa AbstractVector{
                         <:Pair{<:Any,<:Union{Real,AbstractVector{<:Real}}}
@@ -938,14 +992,14 @@ macro testapi(learner, data...)
             end
 
             if :(LearnAPI.intercept) in _functions
-                LearnTestAPI.@logged_testset $INTERCEPT verbosity begin
+                @logged_testset $INTERCEPT verbosity begin
                     c = LearnAPI.intercept(model)
                     Test.@test c isa Union{Real,AbstractVector{<:Real}}
                 end
             end
 
             if :(LearnAPI.feature_importances) in _functions
-                LearnTestAPI.@logged_testset $FEATURE_IMPORTANCES verbosity begin
+                @logged_testset $FEATURE_IMPORTANCES verbosity begin
                     fis = LearnAPI.feature_importances(model)
                     Test.@test fis isa AbstractVector{
                         <:Pair{<:Any,<:Real}
@@ -958,21 +1012,21 @@ macro testapi(learner, data...)
             end
 
             if :(LearnAPI.training_losses) in _functions
-                LearnTestAPI.@logged_testset $TRAINING_LOSSES verbosity begin
+                @logged_testset $TRAINING_LOSSES verbosity begin
                     losses = LearnAPI.training_losses(model)
                     Test.@test losses isa AbstractVector
                 end
             end
 
             if :(LearnAPI.out_of_sample_losses) in _functions
-                LearnTestAPI.@logged_testset $OUT_OF_SAMPLE_LOSSES verbosity begin
+                @logged_testset $OUT_OF_SAMPLE_LOSSES verbosity begin
                     losses = LearnAPI.out_of_sample_losses(model)
                     Test.@test losses isa AbstractVector
                 end
             end
 
             if :(LearnAPI.training_scores) in _functions
-                LearnTestAPI.@logged_testset $TRAINING_SCORES verbosity begin
+                @logged_testset $TRAINING_SCORES verbosity begin
                     losses = LearnAPI.training_scores(model)
                     Test.@test losses isa AbstractVector
                 end
@@ -980,7 +1034,7 @@ macro testapi(learner, data...)
 
             if :(LearnAPI.predictions) in _functions
                 _is_static && throw(ERR_STATIC_PREDICTIONS)
-                LearnTestAPI.@logged_testset $PREDICTIONS verbosity begin
+                @logged_testset $PREDICTIONS verbosity begin
                     Test.@test @nearly(
                         LearnAPI.predictions(model) == LearnAPI.predict(model, X),
                     )
@@ -989,7 +1043,7 @@ macro testapi(learner, data...)
 
             if :(LearnAPI.out_of_sample_indices) in _functions
                 :(LearnAPI.predictions) in _functions || throw(ERR_OOS_INDICES)
-                LearnTestAPI.@logged_testset $OUT_OF_SAMPLE_INDICES verbosity begin
+                @logged_testset $OUT_OF_SAMPLE_INDICES verbosity begin
                     Test.@test(
                         LearnAPI.out_of_sample_indices(model) isa AbstractVector{<:Integer}
                     )
