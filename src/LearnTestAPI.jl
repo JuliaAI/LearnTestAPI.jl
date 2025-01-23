@@ -53,10 +53,10 @@ const CONSTRUCTOR = """
     [Reference](https://juliaai.github.io/LearnAPI.jl/dev/reference/#learners).
 
   """
-const IS_COMPOSITE = """
+const NONLEARNERS = """
 
-    `LearnAPI.is_composite(learner)` returns `false`. Testing no properties of `learner`
-    appear to be other
+    `LearnAPI.learners(learner)` is empty. Testing no properties of `learner` appear to be
+    other
     learners. [Reference](https://juliaai.github.io/LearnAPI.jl/dev/reference/#learners).
 
   """
@@ -554,8 +554,8 @@ macro testapi(learner, data...)
             Test.@test LearnAPI.clone(learner) == learner
         end
 
-        if !LearnAPI.is_composite(learner)
-            @logged_testset $IS_COMPOSITE verbosity begin
+        if isempty(LearnAPI.learners(learner))
+            @logged_testset $NONLEARNERS verbosity begin
                 Test.@test all(propertynames(learner)) do name
                     !LearnAPI.is_learner(getproperty(learner, name))
                 end
@@ -981,12 +981,12 @@ macro testapi(learner, data...)
             if :(LearnAPI.coefficients) in _functions
                 @logged_testset $COEFFICIENTS verbosity begin
                     coefs = LearnAPI.coefficients(model)
-                    Test.@test coeffs isa AbstractVector{
+                    Test.@test coefs isa AbstractVector{
                         <:Pair{<:Any,<:Union{Real,AbstractVector{<:Real}}}
                     }
                     if :(LearnAPI.feature_names) in _functions
                         Test.@test Set(LearnAPI.feature_names(model)) ==
-                            Set(first.(coeffs))
+                            Set(first.(coefs))
                     end
                 end
             end

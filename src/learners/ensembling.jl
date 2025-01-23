@@ -25,7 +25,7 @@ end
 
 # Since the `atom` hyperparameter is another learner, the user must explicitly set it in
 # constructor calls or an error is thrown. We also need to overload the
-# `LearnAPI.is_composite` trait (done later).
+# `LearnAPI.nonlearners` trait (done later).
 
 """
     Ensemble(atom; rng=Random.default_rng(), n=10)
@@ -164,7 +164,7 @@ LearnAPI.components(model::EnsembleFitted) = [:atom => model.models,]
     Ensemble,
     constructor = Ensemble,
     iteration_parameter = :n,
-    is_composite = true,
+    nonlearners = (:rng, :n),
     kinds_of_proxy = (Point(),),
     tags = ("regression", "ensembling", "iterative algorithms"),
     functions = (
