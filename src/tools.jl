@@ -216,3 +216,47 @@ function functionswith(T)
         Meta.parse("LearnAPI.$name")
     end |> unique
 end
+
+
+# # METAPROGRAMMING HELPERS
+
+"""
+    LearaAPI.verb(ex)
+
+*Private method.*
+
+If `ex` is a specification of `verbosity`, such as `:(verbosity=1)`, then return the
+specified value; otherwise, return `nothing`.
+
+"""
+verb(ex) = nothing
+function verb(ex::Expr)
+    if ex.head == :(=)
+        ex.args[1] == :verbosity || throw(ERR_UNSUPPORTED_KWARG(ex.args[1]))
+        return ex.args[2] # the actual verbosity value
+    end
+    return nothing
+end
+
+"""
+    LearnAPI.filter_out_verbosity(exs)
+
+*Private method.*
+
+Return `(filtered_exs, verbosity)` where `filtered_exs` is `exs` with any `verbosity`
+specification dropped, and `verbosity` is the verbosity value (`1` if not
+specified).
+
+"""
+function filter_out_verbosity(exs)
+    verb = 1
+    exs = filter(exs) do ex
+        v = LearnTestAPI.verb(ex)
+        keep = isnothing(v)
+        keep || (verb = v)
+        keep
+    end
+    return exs, verb
+end
+
+

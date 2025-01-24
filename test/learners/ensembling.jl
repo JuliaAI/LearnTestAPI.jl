@@ -63,7 +63,7 @@ x = range(0, stop=2pi, length=n)[randperm(rng, n)]
 y = cos.(x)
 
 learner = LearnTestAPI.StumpRegressor(; rng=rng)
-@testapi learner (x, y) verbosity=1
+@testapi learner (x, y) verbosity=0
 
 # Returns `true` when the `nth` last element of `losses` is better than all subsequent
 # elements:

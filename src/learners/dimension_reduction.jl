@@ -104,5 +104,9 @@ LearnAPI.strip(model::TruncatedSVDFitted) =
         :(LearnAPI.transform),
         :(LearnAPI.inverse_transform),
         :(LearnAPI.extras),
-   )
+    ),
+    load_path  = "LearnTestAPI.TruncatedSVD",
+    pkg_name = "LearnTestAPI",
+    pkg_license = "MIT expat",
+    doc_url = "https://juliaai.github.io/LearnAPI.jl/dev/testing_an_implementation/",
 )
