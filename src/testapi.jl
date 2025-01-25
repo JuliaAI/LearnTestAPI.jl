@@ -1,5 +1,5 @@
 """
-    @testapi learner dataset1, dataset2 ... verbosity=1
+    @testapi learner dataset1 dataset2 ... verbosity=1
 
 Test that `learner` correctly implements the LearnAPI.jl interface, by checking
 contracts against one or more data sets.
@@ -37,15 +37,20 @@ The following are *not* tested:
 
 - That the output of `LearnAPI.target(learner, data)` is indeed a target, in the sense
   that it can be paired, in some way, with the output of `predict`. Such a test would be
-  to suitably pair the output with a predicted proxy for the target, using, say, a proper
-  scoring rule, in the case of probabilistic predictions.
+  to suitably pair the output with a predicted proxy for the target, using, for example, a
+  proper scoring rule, in the case of probabilistic predictions.
 
 - That `inverse_transform` is an approximate left or right inverse to `transform`
 
 - That the one-line convenience methods, `transform(learner, ...)` or `predict(learner,
   ...)`, where implemented, have the same effect as the two-line calls they combine.
 
-- The veracity of `is_pure_julia(learner)`.
+- The veracity of `LearnAPI.is_pure_julia(learner)`.
+
+- The second of the two contracts appearing in the
+  [`LearnAPI.target_observation_scitype`](@extref) docstring. The first contract is only
+  tested if `LearnAPI.data_interface(learner)` is `LearnAPI.RandomAccess()` or
+  `LearnAPI.FiniteIterable()`.
 
 Whenever the internal `learner` algorithm involves case distinctions around data or
 hyperparameters, it is recommended that multiple datasets, and learners with a variety of
@@ -637,12 +642,34 @@ macro testapi(learner, data...)
             end
 
             @logged_testset $HUMAN_NAME verbosity begin
-                human_name = LearnAPI.human_name(learner)
-                Test.@test human_name isa String
+                Test.@test _human_name isa String
+            end
+
+            @logged_testset $FIT_SCITYPE verbosity begin
+                S = LearnAPI.fit_scitype(learner)
+                if S == Union{}
+                    push!(missing_traits, :(LearnAPI.fit_scitype))
+                else
+                    Test.@test ScientificTypes.scitype(data) <: S
+                end
+            end
+
+            S = LearnAPI.target_observation_scitype(learner)
+            testable = :(LearnAPI.target) in _functions &&
+               _data_interface in (LearnAPI.RandomAccess(), LearnAPI.FiniteIterable())
+            if S == Any
+                push!(missing_traits, :(LearnAPI.target_observation_scitype))
+            elseif testable
+                @logged_testset $TARGET_OBSERVATION_SCITYPE verbosity begin
+                    Test.@test all([o for o in _y]) do o
+                        ScientificTypes.scitype(o) <: S
+                    end
+                end
             end
 
         end # for loop over datasets
-        verbosity > 0 && !isempty(missing_traits) && @info $MISSING_TRAITS(missing_traits)
+        verbosity > 0 && !isempty(missing_traits) &&
+            @info $MISSING_TRAITS(missing_traits, _human_name)
         verbosity > 0 && @info "------ @testapi - $_human_name - tests complete ------"
         nothing
     end # quote

@@ -34,6 +34,17 @@ import StableRNGs
 import InteractiveUtils
 import MacroTools
 import IsURL
+import ScientificTypes
+
+# duplication of import/using statements in files at src/learners not appearing above, for
+# test learners:
+import Distributions
+using ScientificTypesBase
+using Tables
+using LinearAlgebra
+using Random
+using Statistics
+using UnPack
 
 include("tools.jl")
 include("logging.jl")

@@ -8,7 +8,7 @@ using LinearAlgebra
 using Random
 using Statistics
 using UnPack
-
+using ScientificTypesBase
 
 # # ENSEMBLE OF REGRESSORS (A MODEL WRAPPER)
 
@@ -542,6 +542,8 @@ end
     iteration_parameter = :ntrees,
     kinds_of_proxy = (Point(),),
     tags = ("regression", "ensembling", "iterative algorithms"),
+    fit_scitype = Tuple{AbstractVector{Continuous},AbstractVector{Continuous}},
+    target_observation_scitype = Continuous,
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),

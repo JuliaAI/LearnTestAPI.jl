@@ -402,12 +402,23 @@ const HUMAN_NAME = """
     Checking that `LearnAPI.human_name(learner)` is a string.
 
   """
+const FIT_SCITYPE = """
 
-function MISSING_TRAITS(missing_traits)
+    Checking that `data` supplied for testing satisfies the constraints articulated by
+    `LearnAPI.fit_scitype(learner)`.
+
+  """
+const TARGET_OBSERVATION_SCITYPE = """
+
+    Checking that `LearnAPI.target(learner, observatoins)` satisifies the constraints
+    articulated by `LearnAPI.target_observation_scitype(learner)`.
+
+"""
+function MISSING_TRAITS(missing_traits, name)
     list = join( map(ex->"`$ex`",collect(missing_traits)), ", ", " and ")
     return """
 
-    The following optional traits have not been overloaded:
+    The following traits, deemed optional for $name, have not been overloaded:
 
     $list.
 
