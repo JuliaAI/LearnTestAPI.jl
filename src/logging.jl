@@ -191,7 +191,7 @@ const STRIP2_INVERSE = """
 const OBS_INVOLUTIVITY_FIT =
     """
 
-    Testing that `obs(learner, obs(learner, X)) == obs(learner, X)` (involutivity).
+    Testing that `obs(learner, obs(learner, data)) == obs(learner, data)` (involutivity).
 
   """
 const OBS_AND_FIT = """

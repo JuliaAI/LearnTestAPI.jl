@@ -360,7 +360,7 @@ struct StumpRegressorFitted
     rng
 end
 
-function LearnAPI.fit(learner::StumpRegressor, data; verbosity=LearnAPI.default_verbosity())
+function LearnAPI.fit(learner::StumpRegressor, data; verbosity=1)
 
     x, y = data
     rng = deepcopy(learner.rng)
