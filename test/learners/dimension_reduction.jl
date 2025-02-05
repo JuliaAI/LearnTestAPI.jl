@@ -11,7 +11,7 @@ U, Vt = r.U, r.Vt
 X = U*diagm([1, 2, 3, 0.01, 0.01])*Vt
 
 learner = LearnTestAPI.TruncatedSVD(codim=2)
-@testapi learner X verbosity=1
+@testapi learner X verbosity=0
 
 @testset "extra test for truncated SVD" begin
     model = @test_logs(

@@ -50,6 +50,8 @@ function LearnAPI.obs(::Ridge, data)
     names = Tables.columnnames(table) |> collect
     RidgeFitObs(Tables.matrix(table)', names, y)
 end
+
+# for involutivity:
 LearnAPI.obs(::Ridge, data::RidgeFitObs) = data
 
 # for observations:
@@ -82,9 +84,10 @@ LearnAPI.fit(learner::Ridge, data; kwargs...) =
     fit(learner, obs(learner, data); kwargs...)
 
 # extracting stuff from training data:
-LearnAPI.target(::Ridge, data) = last(data)
 LearnAPI.target(::Ridge, observations::RidgeFitObs) = observations.y
 LearnAPI.features(::Ridge, observations::RidgeFitObs) = observations.A
+LearnAPI.target(learner::Ridge, data) =
+    LearnAPI.target(learner, obs(learner, data))
 
 # observations for consumption by `predict`:
 LearnAPI.obs(::RidgeFitted, X) = Tables.matrix(X)'
@@ -130,7 +133,7 @@ LearnAPI.fit(learner::Ridge, X, y; kwargs...) =
     fit(learner, (X, y); kwargs...)
 
 
-# # VARIATION OF RIDGE REGRESSION THAT USES FALLBACK OF LearnAPI.obs
+# # VARIATION OF RIDGE REGRESSION WITHOUT DATA FRONT END
 
 # no docstring here - that goes with the constructor
 struct BabyRidge
@@ -168,9 +171,6 @@ function LearnAPI.fit(learner::BabyRidge, data; verbosity=1)
     return BabyRidgeFitted(learner, coefficients, feature_importances)
 
 end
-
-# extracting stuff from training data:
-LearnAPI.target(::BabyRidge, data) = last(data)
 
 LearnAPI.learner(model::BabyRidgeFitted) = model.learner
 

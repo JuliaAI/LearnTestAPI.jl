@@ -83,8 +83,7 @@ end
 *Private method.*
 
 Extract from `LearnAPI.obs(learner, data)`, after applying `apply`, all observations,
-using the data access API specified by `LearnAPI.data_interface(learner)`. Used to test
-that the output of `data` indeed implements the specified interface.
+using the data access API specified by `LearnAPI.data_interface(learner)`.
 
 """
 learner_get(learner, data, apply=identity) =
@@ -97,8 +96,7 @@ learner_get(learner, data, apply=identity) =
 
 Extract from `LearnAPI.obs(model, data)`, after applying `apply`, all observations, using
 the data access API specified by `LearnAPI.data_interface(learner)`, where `learner =
-LearnAPI.learner(model)`. Used to test that the output of `data` indeed implements the
-specified interface.
+LearnAPI.learner(model)`.
 
 """
 model_get(model, data, apply =identity) =

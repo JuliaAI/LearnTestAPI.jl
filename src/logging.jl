@@ -94,6 +94,11 @@ const OBS = """
     Attempting to call `observations = obs(learner, data)`.
 
   """
+const FEATURES0 = """
+
+    Attempting to call `LearnAPI.features(learner, data)`.
+
+  """
 const FEATURES = """
 
     Attempting to call `LearnAPI.features(learner, observations)`.
@@ -249,28 +254,23 @@ const TRANSFORM_ON_SELECTIONS2 = """
     `verbosity=1` for further explanation of `model3` and `X3`.
 
   """
+const TARGET0 = """
+
+    Attempting to call `LearnAPI.target(learner, data)` (fallback returns
+    `last(data)`).
+
+  """
 const TARGET = """
 
     Attempting to call `LearnAPI.target(learner, observations)` (fallback returns
-    `nothing`).
-
-  """
-const TARGET_IN_FUNCTIONS = """
-
-    Checking that `:(LearnAPI.target)` is included in `LearnAPI.functions(learner)`.
-
-  """
-const TARGET_NOT_IN_FUNCTIONS = """
-
-    Checking that `:(LearnAPI.target)` is excluded from `LearnAPI.functions(learner)`, as
-    `LearnAPI.target` has not been overloaded.
+    `last(observations)`).
 
   """
 const TARGET_SELECTIONS = """
 
-    Checking that all observations can be extracted from `LearnAPI.target(learner,
-    observations)` using the data interface declared by
-    `LearnAPI.data_interface(learner)`.
+    Checking that all observations can be extracted from `LearnAPI.target(learner, data)`
+    using the data interface declared by `LearnAPI.data_interface(learner)`. Doing the
+    same with `data` replaced with `observations`.
 
   """
 const WEIGHTS = """

@@ -68,7 +68,7 @@ If `LearnAPI.is_static(learner) == false`, then:
   `transform` are called with no data. Otherwise, they are called with `X`.
 
 If instead `LearnAPI.is_static(learner) == true`, then `fit` and its cousins are called
-without any data, and `dataset` is passed directly to `fit` and/or `transform`.
+without any data, and `dataset` is passed directly to `predict` and/or `transform`.
 
 """
 macro testapi(learner, data...)
@@ -197,8 +197,15 @@ macro testapi(learner, data...)
                 obs(learner, data)
             end
 
-            X = @logged_testset $FEATURES verbosity begin
-                LearnAPI.features(learner, observations)
+            X = if _is_static
+                data
+            else
+                @logged_testset $FEATURES0 verbosity begin
+                    LearnAPI.features(learner, data)
+                end
+                @logged_testset $FEATURES verbosity begin
+                    LearnAPI.features(learner, observations)
+                end
             end
 
             if !(isnothing(X))
@@ -437,24 +444,24 @@ macro testapi(learner, data...)
 
             # target
 
-            _y = @logged_testset $TARGET verbosity begin
-                LearnAPI.target(learner, observations)
-            end
-
-            if !(isnothing(_y))
-                @logged_testset $TARGET_IN_FUNCTIONS verbosity begin
-                    Test.@test :(LearnAPI.target) in _functions
+            if :(LearnAPI.target) in _functions
+                _y = @logged_testset $TARGET0 verbosity begin
+                    LearnAPI.target(learner, data)
                 end
-                y = @logged_testset $TARGET_SELECTIONS verbosity begin
+                @logged_testset $TARGET verbosity begin
+                    LearnAPI.target(learner, observations)
+                end
+                @logged_testset $TARGET_SELECTIONS verbosity begin
                     LearnTestAPI.learner_get(
                         learner,
                         data,
                         data->LearnAPI.target(learner, data),
                     )
-                end
-            else
-                @logged_testset $TARGET_NOT_IN_FUNCTIONS verbosity begin
-                    Test.@test !(:(LearnAPI.target) in _functions)
+                    LearnTestAPI.learner_get(
+                        learner,
+                        observations,
+                        data->LearnAPI.target(learner, data),
+                    )
                 end
             end
 
@@ -645,11 +652,11 @@ macro testapi(learner, data...)
                 Test.@test _human_name isa String
             end
 
-            @logged_testset $FIT_SCITYPE verbosity begin
-                S = LearnAPI.fit_scitype(learner)
-                if S == Union{}
-                    push!(missing_traits, :(LearnAPI.fit_scitype))
-                else
+            S = LearnAPI.fit_scitype(learner)
+            if S == Union{}
+                push!(missing_traits, :(LearnAPI.fit_scitype))
+            else
+                @logged_testset $FIT_SCITYPE verbosity begin
                     Test.@test ScientificTypes.scitype(data) <: S
                 end
             end
@@ -657,7 +664,7 @@ macro testapi(learner, data...)
             S = LearnAPI.target_observation_scitype(learner)
             testable = :(LearnAPI.target) in _functions &&
                _data_interface in (LearnAPI.RandomAccess(), LearnAPI.FiniteIterable())
-            if S == Any
+            if S == Any && (LearnAPI.target) in _functions
                 push!(missing_traits, :(LearnAPI.target_observation_scitype))
             elseif testable
                 @logged_testset $TARGET_OBSERVATION_SCITYPE verbosity begin
