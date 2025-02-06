@@ -137,7 +137,7 @@ end
 
 *Private method.*
 
-Replaces the expresion `lhs == rhs` with `isnear(lhs, rhs; kwargs...)` for testing a weaker
+Replaces the expression `lhs == rhs` with `isnear(lhs, rhs; kwargs...)` for testing a weaker
 form of equality. Here `kwargs...` are keyword arguments accepted in `isapprox(lhs, rhs;
 kwargs...)`, which is called if `lhs == rhs` fails.
 

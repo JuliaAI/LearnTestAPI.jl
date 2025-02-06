@@ -43,7 +43,7 @@ const FUNCTIONS3 = """
   """
 const FUNCTIONS4 = """
 
-    Testing that `LearnAPI.functions(learner)` exludes `:(LearnAPI.features)`, as
+    Testing that `LearnAPI.functions(learner)` excludes `:(LearnAPI.features)`, as
     `LearnAPI.is_static(learner)` is `true`.
 
   """
@@ -410,7 +410,7 @@ const FIT_SCITYPE = """
   """
 const TARGET_OBSERVATION_SCITYPE = """
 
-    Checking that `LearnAPI.target(learner, observatoins)` satisifies the constraints
+    Checking that `LearnAPI.target(learner, observatoins)` satisfies the constraints
     articulated by `LearnAPI.target_observation_scitype(learner)`.
 
 """
