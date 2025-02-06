@@ -25,7 +25,7 @@ Xtest = Tables.subset(X, test)
 rng = StableRNG(123)
 atom = LearnTestAPI.Ridge()
 learner = LearnTestAPI.Ensemble(atom; n=4, rng)
-@testapi learner data verbosity=0
+@testapi learner data verbosity=1
 
 @testset "extra tests for ensemble" begin
     @test LearnAPI.clone(learner) == learner
