@@ -8,7 +8,7 @@ contracts against one or more data sets.
 using LearnTestAPI
 
 X = (
-    feautre1 = [1, 2, 3],
+    feature1 = [1, 2, 3],
     feature2 = ["a", "b", "c"],
     feature3 = [10.0, 20.0, 30.0],
 )
