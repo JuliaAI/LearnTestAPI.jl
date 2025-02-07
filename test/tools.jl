@@ -28,4 +28,9 @@ data = Data(v)
         LearnTestAPI.model_get(model, data) == v
 end
 
+@test_logs(
+    (:info, LearnTestAPI.INFO_NEAR),
+    (@test_throws MethodError LearnTestAPI.isnear('a', 'b')),
+)
+
 true
