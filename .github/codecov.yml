@@ -1,6 +1,4 @@
 coverage:
-    ignore:
-       - "**/gradient_descent.jl"
     project:
       default:
         threshold: 0.5%
