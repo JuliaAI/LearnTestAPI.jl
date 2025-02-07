@@ -1,6 +1,6 @@
 coverage:
     ignore:
-       - "src/learners/gradient_descent.jl"
+       - "**/gradient_descent.jl"
     project:
       default:
         threshold: 0.5%
