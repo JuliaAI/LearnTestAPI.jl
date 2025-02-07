@@ -1,7 +1,7 @@
 # This file defines `TruncatedSVD(; codim=1)`
 
 using LearnAPI
-using LinearAlgebra
+using LinearAlgebra 
 
 
 # # DIMENSION REDUCTION USING TRUNCATED SVD DECOMPOSITION
