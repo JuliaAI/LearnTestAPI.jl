@@ -30,7 +30,7 @@ module LearnTestAPI
 using LearnAPI
 import Test
 import Serialization
-import MLUtils
+import MLCore
 import StableRNGs
 import InteractiveUtils
 import MacroTools

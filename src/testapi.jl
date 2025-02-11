@@ -78,7 +78,7 @@ macro testapi(learner, data...)
     quote
         import LearnTestAPI.Test
         import LearnTestAPI.Serialization
-        import LearnTestAPI.MLUtils
+        import LearnTestAPI.MLCore
         import LearnTestAPI.LearnAPI
         import LearnTestAPI.InteractiveUtils
         import LearnTestAPI: @logged_testset, @nearly
