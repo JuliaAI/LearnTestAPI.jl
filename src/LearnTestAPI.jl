@@ -1,7 +1,7 @@
 """
     LearnTestAPI
 
-Module for testing implementations of the interfacde defined in
+Module for testing implementations of the interface defined in
 [LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/).
 
 If your package defines an object `learner` implementing the interface, then put something
