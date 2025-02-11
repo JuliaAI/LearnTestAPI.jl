@@ -211,7 +211,7 @@ const SELECTED_FOR_FIT = """
     Testing that we can select all observations from `_data = LearnAPI.obs(learner,
     data)`, using the interface declared by `LearnAPI.data_interface(learner)`. For
     example, if this interface is `LearnAPI.RandomAccess()`, the attempted selection is
-    `data3 = MLUtils.getobs(_data, 1:MLUtils.numobs(_data))`. For this interface, also
+    `data3 = MLCore.getobs(_data, 1:MLCore.numobs(_data))`. For this interface, also
     testing that we can call `fit` on the selection, obtaining a new `fit` result
     `model3`.
 
@@ -221,7 +221,7 @@ const SELECTED = """
     Testing that we can select all observations from `_X = LearnAPI.obs(model, X)`,
     using the interface declared by `LearnAPI.data_interface(learner)`. For example, if
     this interface is `LearnAPI.RandomAccess()`, the attempted selection is
-    `X3 = MLUtils.getobs(_X, 1:MLUtils.numobs(_X))`.
+    `X3 = MLCore.getobs(_X, 1:MLCore.numobs(_X))`.
 
   """
 const PREDICT_ON_SELECTIONS1 = """

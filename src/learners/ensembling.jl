@@ -76,7 +76,7 @@ function LearnAPI.fit(learner::Ensemble, data; verbosity=1)
     rng = deepcopy(learner.rng) # to prevent mutation of `learner`!
     n = learner.n
 
-    # ensure data can be subsampled using MLUtils.jl, and that we're feeding the atomic
+    # ensure data can be subsampled using MLCore.jl, and that we're feeding the atomic
     # `fit` data in an efficient (pre-processed) form:
 
     observations = obs(atom, data)
@@ -85,12 +85,12 @@ function LearnAPI.fit(learner::Ensemble, data; verbosity=1)
     models = []
 
     # get number of observations:
-    N = MLUtils.numobs(observations)
+    N = MLCore.numobs(observations)
 
     # train the ensemble:
     for _ in 1:n
         bag = rand(rng, 1:N, N)
-        data_subset = MLUtils.getobs(observations, bag)
+        data_subset = MLCore.getobs(observations, bag)
         # step down one verbosity level in atomic fit:
         model = fit(atom, data_subset; verbosity=verbosity - 1)
         push!(models, model)
@@ -125,7 +125,7 @@ function LearnAPI.update(
 
     atom = learner.atom
     observations = obs(atom, data)
-    N = MLUtils.numobs(observations)
+    N = MLCore.numobs(observations)
 
     # initialize:
     models = model.models
@@ -134,7 +134,7 @@ function LearnAPI.update(
     # add new regressors to the ensemble:
     for _ in 1:Δn
         bag = rand(rng, 1:N, N)
-        data_subset = MLUtils.getobs(observations, bag)
+        data_subset = MLCore.getobs(observations, bag)
         model = fit(atom, data_subset; verbosity=verbosity-1)
         push!(models, model)
     end

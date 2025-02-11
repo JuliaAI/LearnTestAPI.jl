@@ -48,7 +48,7 @@ The following are *not* tested:
 - The veracity of `LearnAPI.is_pure_julia(learner)`.
 
 - The second of the two contracts appearing in the
-  [`LearnAPI.target_observation_scitype`](@extref) docstring. The first contract is only
+  [`LearnAPI.target_observation_scitype`](@ref) docstring. The first contract is only
   tested if `LearnAPI.data_interface(learner)` is `LearnAPI.RandomAccess()` or
   `LearnAPI.FiniteIterable()`.
 
@@ -78,7 +78,7 @@ macro testapi(learner, data...)
     quote
         import LearnTestAPI.Test
         import LearnTestAPI.Serialization
-        import LearnTestAPI.MLUtils
+        import LearnTestAPI.MLCore
         import LearnTestAPI.LearnAPI
         import LearnTestAPI.InteractiveUtils
         import LearnTestAPI: @logged_testset, @nearly
