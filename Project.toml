@@ -1,7 +1,7 @@
 name = "LearnTestAPI"
 uuid = "3111ed91-c4f2-40e7-bb19-7f6c618409b8"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
