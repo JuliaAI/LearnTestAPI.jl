@@ -62,8 +62,8 @@ const ERR_BAD_LENGTH = ErrorException(
 
 function get(learner_or_model, data, ::LearnAPI.RandomAccess, apply)
     observations = LearnAPI.obs(learner_or_model, data) |> apply
-    n = MLUtils.numobs(observations)
-    return MLUtils.getobs(observations, 1:n)
+    n = MLCore.numobs(observations)
+    return MLCore.getobs(observations, 1:n)
 end
 function get(learner_or_model, data, ::LearnAPI.FiniteIterable, apply)
     observations = LearnAPI.obs(learner_or_model, data)|> apply

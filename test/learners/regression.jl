@@ -2,7 +2,7 @@ using Test
 using LearnAPI
 using LinearAlgebra
 using Tables
-import MLUtils
+import MLCore
 import DataFrames
 using LearnTestAPI
 
@@ -55,9 +55,9 @@ learner = LearnTestAPI.Ridge(lambda=0.5)
 
     fitobs = LearnAPI.obs(learner, data)
     predictobs = LearnAPI.obs(model, X)
-    model = fit(learner, MLUtils.getobs(fitobs, train); verbosity=0)
+    model = fit(learner, MLCore.getobs(fitobs, train); verbosity=0)
     @test LearnAPI.target(learner, fitobs) == y
-    @test predict(model, Point(), MLUtils.getobs(predictobs, test)) ≈ ŷ
+    @test predict(model, Point(), MLCore.getobs(predictobs, test)) ≈ ŷ
     @test predict(model, LearnAPI.features(learner, fitobs)) ≈ predict(model, X)
 
     @test LearnAPI.feature_importances(model) isa Vector{<:Pair{Symbol}}
@@ -73,7 +73,7 @@ learner = LearnTestAPI.Ridge(lambda=0.5)
     @test predict(
         recovered_model,
         Point(),
-        MLUtils.getobs(predictobs, test)
+        MLCore.getobs(predictobs, test)
     ) ≈ ŷ
 
 end
@@ -91,9 +91,9 @@ learner = LearnTestAPI.BabyRidge(lambda=0.5)
 
     fitobs = obs(learner, data)
     predictobs = LearnAPI.obs(model, X)
-    model = fit(learner, MLUtils.getobs(fitobs, train); verbosity=0)
-    @test predict(model, Point(), MLUtils.getobs(predictobs, test)) == ŷ ==
-        predict(model, MLUtils.getobs(predictobs, test))
+    model = fit(learner, MLCore.getobs(fitobs, train); verbosity=0)
+    @test predict(model, Point(), MLCore.getobs(predictobs, test)) == ŷ ==
+        predict(model, MLCore.getobs(predictobs, test))
     @test LearnAPI.target(learner, data) == y
     @test LearnAPI.predict(model, X) ≈
         LearnAPI.predict(model, LearnAPI.features(learner, data))
