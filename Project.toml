@@ -4,6 +4,8 @@ authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
 version = "0.2.1"
 
 [deps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+CategoricalDistributions = "af321ab8-2d2e-40a6-b165-3d674595d28e"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 IsURL = "ceb4388c-583f-448d-bb30-00b11e8c5682"
@@ -23,6 +25,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
+CategoricalArrays = "0.10.8"
+CategoricalDistributions = "0.1.15"
 Distributions = "0.25"
 InteractiveUtils = "<0.0.1, 1"
 IsURL = "0.2.0"
@@ -47,7 +51,16 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [targets]
-test = ["DataFrames", "Distributions", "Random", "LinearAlgebra", "Statistics", "Tables"]
+test = [
+  "DataFrames",
+  "Distributions",
+  "Random",
+  "LinearAlgebra",
+  "Statistics",
+  "StatsModels",
+  "Tables",
+  ]

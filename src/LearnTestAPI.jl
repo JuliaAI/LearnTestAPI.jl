@@ -53,6 +53,7 @@ include("logging.jl")
 include("testapi.jl")
 include("learners/static_algorithms.jl")
 include("learners/regression.jl")
+include("learners/classification.jl")
 include("learners/ensembling.jl")
 # next learner excluded because of heavy dependencies:
 # include("learners/gradient_descent.jl")
