@@ -21,7 +21,9 @@ end
 """
     Ridge(; lambda=0.1)
 
-Instantiate a ridge regression learner, with regularization of `lambda`.
+Instantiate a ridge regression learner, with regularization of `lambda`. Data can be
+provided to `fit` or `predict` in any form supported by the `Saffron` data front end at
+LearnDataFrontEnds.jl.
 
 """
 Ridge(; lambda=0.1) = Ridge(lambda) # LearnAPI.constructor defined later

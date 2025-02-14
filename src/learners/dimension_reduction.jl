@@ -1,13 +1,14 @@
 # This file defines `TruncatedSVD(; codim=1)`
 
 using LearnAPI
-using LinearAlgebra 
+using LinearAlgebra
+import LearnDataFrontEnds as FrontEnds
 
 
 # # DIMENSION REDUCTION USING TRUNCATED SVD DECOMPOSITION
 
 # Recall that truncated SVD reduction is the same as PCA reduction, but without
-# centering. We suppose observations are presented as the columns of a `Real` matrix.
+# centering.
 
 # Some struct fields are left abstract for simplicity.
 
@@ -22,6 +23,11 @@ end
 
 Instantiate a truncated singular value decomposition algorithm for reducing the dimension
 of observations by `codim`.
+
+Data can be provided to `fit` or `transform` in any form supported by the `Tarragon` data
+front end at LearnDataFrontEnds.jl. However, the outputs of `transform` and
+`inverse_transform` are always matrices.
+
 
 ```julia
 learner = Truncated()
@@ -49,10 +55,21 @@ end
 
 LearnAPI.learner(model::TruncatedSVDFitted) = model.learner
 
-function LearnAPI.fit(learner::TruncatedSVD, X; verbosity=1)
+# add a canned data front end; `obs` will return objects of type `FrontEnds.Obs`:
+LearnAPI.obs(learner::TruncatedSVD, data) =
+    FrontEnds.fitobs(learner, data, FrontEnds.Tarragon())
+LearnAPI.obs(model::TruncatedSVDFitted, data) =
+    obs(model, data, FrontEnds.Tarragon())
+
+# training data deconstructor:
+LearnAPI.features(learner::TruncatedSVD, data) =
+    LearnAPI.features(learner, data, FrontEnds.Tarragon())
+
+function LearnAPI.fit(learner::TruncatedSVD, observations::FrontEnds.Obs; verbosity=1)
 
     # unpack hyperparameters:
     codim = learner.codim
+    X = observations.features
     p, n = size(X)
     n ≥ p || error("Insufficient number observations. ")
     outdim = p - codim
@@ -70,14 +87,19 @@ function LearnAPI.fit(learner::TruncatedSVD, X; verbosity=1)
     return TruncatedSVDFitted(learner, U, Ut, singular_values)
 
 end
+LearnAPI.fit(learner::TruncatedSVD, data; kwargs...) =
+    LearnAPI.fit(learner, LearnAPI.obs(learner, data); kwargs...)
 
-LearnAPI.transform(model::TruncatedSVDFitted, X) = model.Ut*X
+LearnAPI.transform(model::TruncatedSVDFitted, observations::FrontEnds.Obs) =
+    model.Ut*(observations.features)
+LearnAPI.transform(model::TruncatedSVDFitted, data) =
+    LearnAPI.transform(model, obs(model, data))
 
 # convenience fit-transform:
-LearnAPI.transform(learner::TruncatedSVD, X; kwargs...) =
-    transform(fit(learner, X; kwargs...), X)
+LearnAPI.transform(learner::TruncatedSVD, data; kwargs...) =
+    transform(fit(learner, data; kwargs...), data)
 
-LearnAPI.inverse_transform(model::TruncatedSVDFitted, W) = model.U*W
+LearnAPI.inverse_transform(model::TruncatedSVDFitted, W::AbstractMatrix) = model.U*W
 
 # accessor function:
 function LearnAPI.extras(model::TruncatedSVDFitted)
