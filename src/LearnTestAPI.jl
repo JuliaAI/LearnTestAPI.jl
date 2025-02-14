@@ -46,6 +46,7 @@ using LinearAlgebra
 using Random
 using Statistics
 using UnPack
+import LearnDataFrontEnds
 
 include("tools.jl")
 include("logging.jl")

@@ -26,7 +26,7 @@ learner = LearnTestAPI.Ridge(lambda=0.5)
     @test :(LearnAPI.obs) in LearnAPI.functions(learner)
 
     @test LearnAPI.target(learner, data) == y
-    @test LearnAPI.features(learner, data) == X
+    @test LearnAPI.features(learner, data).features == Tables.matrix(X)'
 
     # verbose fitting:
     @test_logs(
