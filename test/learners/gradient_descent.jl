@@ -1,7 +1,7 @@
 # THIS FILE IS NOT INCLUDED BY /test/runtests.jl because of heavy dependencies.  The
 # source file, "/src/learners/gradient_descent.jl" is not included in the package, but
 # exits as a learner exemplar. Next line manually loads the source:
-include(joinpath(@__DIR__, "..", "..", "src", "learners", "gradient_descent.jl")
+include(joinpath(@__DIR__, "..", "..", "src", "learners", "gradient_descent.jl"))
 
 using Test
 using LearnAPI
@@ -42,15 +42,10 @@ rng = StableRNG(123)
 learner =
     PerceptronClassifier(; optimiser=Optimisers.Adam(0.01), epochs=40, rng)
 
-@testapi learner (X, y) verbosity=1
+@testapi learner (X, y) verbosity=0 # use verbosity=1 to debug
 
-@testset "PerceptronClassfier" begin
-    @test LearnAPI.clone(learner) == learner
-    @test :(LearnAPI.update) in LearnAPI.functions(learner)
-    @test LearnAPI.target(learner, (X, y)) == y
-    @test LearnAPI.features(learner, (X, y)) == X
-
-    model40 = fit(learner, Xtrain, ytrain; verbosity=0)
+@testset "extra tests for perceptron classfier" begin
+    model40 = fit(learner, (Xtrain, ytrain); verbosity=0)
 
     # 40 epochs is sufficient for 90% accuracy in this case:
     @test sum(predict(model40, Point(), Xtest) .== ytest)/length(ytest) > 0.9
@@ -60,16 +55,16 @@ learner =
     @test predict(model40, Xtest) ≈ ŷ40
 
     # add 30 epochs in an `update`:
-    model70 = update(model40, Xtrain, y[train]; verbosity=0, epochs=70)
+    model70 = update(model40, (Xtrain, y[train]), :epochs=>70; verbosity=0)
     ŷ70 = predict(model70, Xtest);
     @test !(ŷ70 ≈ ŷ40)
 
     # compare with cold restart:
-    model = fit(LearnAPI.clone(learner; epochs=70), Xtrain, y[train]; verbosity=0);
+    model = fit(LearnAPI.clone(learner; epochs=70), (Xtrain, y[train]); verbosity=0);
     @test ŷ70 ≈ predict(model, Xtest)
 
     # instead add 30 epochs using `update_observations` instead:
-    model70b = update_observations(model40, Xtrain, y[train]; verbosity=0, epochs=30)
+    model70b = update_observations(model40, (Xtrain, y[train]), :epochs=>30; verbosity=0)
     @test ŷ70 ≈ predict(model70b, Xtest) ≈ predict(model, Xtest)
 end
 

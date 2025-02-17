@@ -1,8 +1,8 @@
-# THIS FILE IS NOT INCLUDED
+# THIS FILE IS NOT INCLUDED BUT EXISTS AS AN IMPLEMENTATION EXEMPLAR
 
 # This file defines:
-
 # - `PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.default_rng())
+
 using LearnAPI
 using Random
 using Statistics
@@ -49,7 +49,7 @@ end
 """
     corefit(perceptron, optimiser, X, y_hot, epochs, state, verbosity)
 
-Return updated `perceptron`, `state` and training losses by carrying out gradient descent
+Return updated `perceptron`, `state`, and training losses by carrying out gradient descent
 for the specified number of `epochs`.
 
 - `perceptron`: component array with components `weights` and `bias`
@@ -108,13 +108,7 @@ point predictions with `predict(model, Point(), Xnew)`.
 
 # Warm restart options
 
-    update_observations(model, newdata; replacements...)
-
-Return an updated model, with the weights and bias of the previously learned perceptron
-used as the starting state in new gradient descent updates. Adopt any specified
-hyperparameter `replacements` (properties of `LearnAPI.learner(model)`).
-
-    update(model, newdata; epochs=n, replacements...)
+    update(model, newdata, :epochs=>n, other_replacements...; verbosity=1)
 
 If `Δepochs = n - perceptron.epochs` is non-negative, then return an updated model, with
 the weights and bias of the previously learned perceptron used as the starting state in
@@ -123,17 +117,18 @@ instead of the previous training data. Any other hyperparaameter `replacements` 
 adopted. If `Δepochs` is negative or not specified, instead return `fit(learner,
 newdata)`, where `learner=LearnAPI.clone(learner; epochs=n, replacements....)`.
 
+    update_observations(model, newdata, replacements...; verbosity=1)
+
+Return an updated model, with the weights and bias of the previously learned perceptron
+used as the starting state in new gradient descent updates. Adopt any specified
+hyperparameter `replacements` (properties of `LearnAPI.learner(model)`).
+
 """
 PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.default_rng()) =
     PerceptronClassifier(epochs, optimiser, rng)
 
 
-# ### Data interface
-
-# For raw training data:
-LearnAPI.target(learner::PerceptronClassifier, data::Tuple) = last(data)
-
-# For wrapping pre-processed training data (output of `obs(learner, data)`):
+# Type for internal representation of data (output of `obs(learner, data)`):
 struct PerceptronClassifierObs
     X::Matrix{Float32}
     y_hot::BitMatrix  # one-hot encoded target
@@ -164,15 +159,19 @@ Base.getindex(observations::PerceptronClassifierObs, I) = PerceptronClassifierOb
     observations.classes,
 )
 
+# training data deconstructors:
 LearnAPI.target(
     learner::PerceptronClassifier,
     observations::PerceptronClassifierObs,
 ) = decode(observations.y_hot, observations.classes)
-
+LearnAPI.target(learner::PerceptronClassifier, data) =
+    LearnAPI.target(learner, obs(learner, data))
 LearnAPI.features(
     learner::PerceptronClassifier,
     observations::PerceptronClassifierObs,
 ) = observations.X
+LearnAPI.features(learner::PerceptronClassifier, data) =
+    LearnAPI.features(learner, obs(learner, data))
 
 # Note that data consumed by `predict` needs no pre-processing, so no need to overload
 # `obs(model, data)`.
@@ -229,9 +228,9 @@ LearnAPI.fit(learner::PerceptronClassifier, data; kwargs...) =
 # see the `PerceptronClassifier` docstring for `update_observations` logic.
 function LearnAPI.update_observations(
     model::PerceptronClassifierFitted,
-    observations_new::PerceptronClassifierObs;
+    observations_new::PerceptronClassifierObs,
+    replacements...;
     verbosity=1,
-    replacements...,
     )
 
     # unpack data:
@@ -243,7 +242,7 @@ function LearnAPI.update_observations(
     classes == model.classes || error("New training target has incompatible classes.")
 
     learner_old = LearnAPI.learner(model)
-    learner = LearnAPI.clone(learner_old; replacements...)
+    learner = LearnAPI.clone(learner_old, replacements...)
 
     perceptron = model.perceptron
     state = model.state
@@ -255,15 +254,15 @@ function LearnAPI.update_observations(
 
     return PerceptronClassifierFitted(learner, perceptron, state, classes, losses)
 end
-LearnAPI.update_observations(model::PerceptronClassifierFitted, data; kwargs...) =
-    update_observations(model, obs(LearnAPI.learner(model), data); kwargs...)
+LearnAPI.update_observations(model::PerceptronClassifierFitted, data, args...; kwargs...) =
+    update_observations(model, obs(LearnAPI.learner(model), data), args...; kwargs...)
 
 # see the `PerceptronClassifier` docstring for `update` logic.
 function LearnAPI.update(
     model::PerceptronClassifierFitted,
-    observations::PerceptronClassifierObs;
+    observations::PerceptronClassifierObs,
+    replacements...;
     verbosity=1,
-    replacements...,
     )
 
     # unpack data:
@@ -275,8 +274,8 @@ function LearnAPI.update(
     classes == model.classes || error("New training target has incompatible classes.")
 
     learner_old = LearnAPI.learner(model)
-    learner = LearnAPI.clone(learner_old; replacements...)
-    :epochs in keys(replacements) || return fit(learner, observations)
+    learner = LearnAPI.clone(learner_old, replacements...)
+    :epochs in keys(replacements) || return fit(learner, observations; verbosity)
 
     perceptron = model.perceptron
     state = model.state
@@ -284,15 +283,16 @@ function LearnAPI.update(
 
     epochs = learner.epochs
     Δepochs = epochs - learner_old.epochs
-    epochs < 0 && return fit(model, learner)
+    epochs < 0 && return fit(model, learner; verbosity)
 
-    perceptron, state, losses_new = corefit(perceptron, X, y_hot, Δepochs, state, verbosity)
+    perceptron, state, losses_new =
+        corefit(perceptron, X, y_hot, Δepochs, state, verbosity)
     losses = vcat(losses, losses_new)
 
     return PerceptronClassifierFitted(learner, perceptron, state, classes, losses)
 end
-LearnAPI.update(model::PerceptronClassifierFitted, data; kwargs...) =
-    update(model, obs(LearnAPI.learner(model), data); kwargs...)
+LearnAPI.update(model::PerceptronClassifierFitted, data, args...; kwargs...) =
+    update(model, obs(LearnAPI.learner(model), data), args...; kwargs...)
 
 
 # ### Predict
@@ -335,13 +335,3 @@ LearnAPI.training_losses(model::PerceptronClassifierFitted) = model.losses
         :(LearnAPI.training_losses),
    )
 )
-
-
-# ### Convenience methods
-
-LearnAPI.fit(learner::PerceptronClassifier, X, y; kwargs...) =
-    fit(learner, (X, y); kwargs...)
-LearnAPI.update_observations(learner::PerceptronClassifier, X, y; kwargs...) =
-    update_observations(learner, (X, y); kwargs...)
-LearnAPI.update(learner::PerceptronClassifier, X, y; kwargs...) =
-    update(learner, (X, y); kwargs...)
