@@ -9,7 +9,8 @@ import CategoricalDistributions.OrderedCollections.OrderedDict
 import CategoricalDistributions.Distributions.StatsBase.proportionmap
 
 # The implementation of a constant classifier below is not the simplest, but it
-# demonstrates some patterns that apply more generally in classification.
+# demonstrates some patterns that apply more generally in classification, including
+# inclusion of the canned data front end, `Sage`.
 
 """
     ConstantClassifier()
