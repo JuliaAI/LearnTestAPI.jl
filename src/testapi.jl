@@ -163,12 +163,12 @@ macro testapi(learner, data...)
             if _is_static
                 model =
                     @logged_testset $FIT_IS_STATIC verbosity begin
-                        LearnAPI.fit(learner; verbosity=verbosity-1)
+                        LearnAPI.fit(learner; verbosity=verbosity - 1)
                     end
             else
                 model =
                     @logged_testset $FIT_IS_NOT_STATIC verbosity begin
-                        LearnAPI.fit(learner, data; verbosity=verbosity-1)
+                        LearnAPI.fit(learner, data; verbosity=verbosity - 1)
                     end
             end
 
@@ -342,7 +342,7 @@ macro testapi(learner, data...)
                     @logged_testset $SELECTED_FOR_FIT verbosity begin
                         data3 = LearnTestAPI.learner_get(learner, data)
                         if _data_interface isa LearnAPI.RandomAccess
-                            LearnAPI.fit(learner, data3; verbosity=verbosity-1)
+                            LearnAPI.fit(learner, data3; verbosity=verbosity - 1)
                         else
                             nothing
                         end
@@ -493,14 +493,19 @@ macro testapi(learner, data...)
             if :(LearnAPI.update) in _functions
                 _is_static && throw($ERR_STATIC_UPDATE)
                 @logged_testset $UPDATE verbosity begin
-                    LearnAPI.update(model, data; verbosity=0)
+                    LearnAPI.update(model, data; verbosity=verbosity - 1)
                 end
                 # only test hyperparameter replacement in case of iteration parameter:
                 iter = LearnAPI.iteration_parameter(learner)
                 if !isnothing(iter)
                     @logged_testset $UPDATE_ITERATIONS verbosity begin
                         n = getproperty(learner, iter)
-                        newmodel = LearnAPI.update(model, data, iter=>n+1; verbosity=0)
+                        newmodel = LearnAPI.update(
+                            model,
+                            data,
+                            iter=>n+1;
+                            verbosity=verbosity - 1,
+                        )
                         newlearner = LearnAPI.clone(learner, iter=>n+1)
                         Test.@test LearnAPI.learner(newmodel) == newlearner
                         abinitiomodel = LearnAPI.fit(newlearner, data; verbosity=0)

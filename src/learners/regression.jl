@@ -6,12 +6,14 @@
 using LearnAPI
 using Tables
 using LinearAlgebra
+import LearnDataFrontEnds as FrontEnds
 
 # # NAIVE RIDGE REGRESSION WITH NO INTERCEPTS
 
-# We overload `obs` to expose internal representation of data. See later for a simpler
-# variation using the `obs` fallback.
+# We implement a canned data front end. See `BabyRidgeRegressor` below for a no-frills
+# version.
 
+# no docstring here; that goes with the constructor
 struct Ridge
     lambda::Float64
 end
@@ -19,7 +21,9 @@ end
 """
     Ridge(; lambda=0.1)
 
-Instantiate a ridge regression learner, with regularization of `lambda`.
+Instantiate a ridge regression learner, with regularization of `lambda`. Data can be
+provided to `fit` or `predict` in any form supported by the `Saffron` data front end at
+LearnDataFrontEnds.jl.
 
 """
 Ridge(; lambda=0.1) = Ridge(lambda) # LearnAPI.constructor defined later
@@ -43,28 +47,25 @@ Base.getindex(data::RidgeFitObs, I) =
     RidgeFitObs(data.A[:,I], data.names, data.y[I])
 Base.length(data::RidgeFitObs) = length(data.y)
 
-# observations for consumption by `fit`:
-function LearnAPI.obs(::Ridge, data)
-    X, y = data
-    table = Tables.columntable(X)
-    names = Tables.columnnames(table) |> collect
-    RidgeFitObs(Tables.matrix(table)', names, y)
-end
+# add a canned data front end; `obs` will return objects of type `FrontEnds.Obs`:
+const frontend = FrontEnds.Saffron(view=true)
+LearnAPI.obs(learner::Ridge, data) = FrontEnds.fitobs(learner, data, frontend)
+LearnAPI.obs(model::RidgeFitted, data) = obs(model, data, frontend)
 
-# for involutivity:
-LearnAPI.obs(::Ridge, data::RidgeFitObs) = data
+# training data deconstructors:
+LearnAPI.features(learner::Ridge, data) = LearnAPI.features(learner, data, frontend)
+LearnAPI.target(learner::Ridge, data) = LearnAPI.target(learner, data, frontend)
 
-# for observations:
-function LearnAPI.fit(learner::Ridge, observations::RidgeFitObs; verbosity=1)
+function LearnAPI.fit(learner::Ridge, observations::FrontEnds.Obs; verbosity=1)
 
     # unpack hyperparameters and data:
     lambda = learner.lambda
-    A = observations.A
+    A = observations.features
     names = observations.names
-    y = observations.y
+    y = observations.target
 
     # apply core learner:
-    coefficients = (A*A' + learner.lambda*I)\(A*y) # 1 x p matrix
+    coefficients = (A*A' + learner.lambda*I)\(A*y) #  p x 1 matrix
 
     # determine crude feature importances:
     feature_importances =
@@ -78,28 +79,13 @@ function LearnAPI.fit(learner::Ridge, observations::RidgeFitObs; verbosity=1)
     return RidgeFitted(learner, coefficients, feature_importances, names)
 
 end
-
-# for unprocessed `data = (X, y)`:
 LearnAPI.fit(learner::Ridge, data; kwargs...) =
     fit(learner, obs(learner, data); kwargs...)
 
-# extracting stuff from training data:
-LearnAPI.target(::Ridge, observations::RidgeFitObs) = observations.y
-LearnAPI.features(::Ridge, observations::RidgeFitObs) = observations.A
-LearnAPI.target(learner::Ridge, data) =
-    LearnAPI.target(learner, obs(learner, data))
-
-# observations for consumption by `predict`:
-LearnAPI.obs(::RidgeFitted, X) = Tables.matrix(X)'
-LearnAPI.obs(::RidgeFitted, X::AbstractMatrix) = X
-
-# matrix input:
-LearnAPI.predict(model::RidgeFitted, ::Point, observations::AbstractMatrix) =
-        observations'*model.coefficients
-
-# tabular input:
-LearnAPI.predict(model::RidgeFitted, ::Point, Xnew) =
-        predict(model, Point(), obs(model, Xnew))
+LearnAPI.predict(model::RidgeFitted, ::Point, observations::FrontEnds.Obs) =
+    (observations.features)'*model.coefficients
+LearnAPI.predict(model::RidgeFitted, kind_of_proxy, data) =
+    LearnAPI.predict(model, kind_of_proxy, obs(model, data))
 
 # accessor function:
 LearnAPI.feature_importances(model::RidgeFitted) = model.feature_importances

@@ -30,7 +30,7 @@ learner = LearnTestAPI.Ensemble(atom; n=4, rng)
 @testset "extra tests for ensemble" begin
     @test LearnAPI.clone(learner) == learner
     @test LearnAPI.target(learner, data) == y
-    @test LearnAPI.features(learner, data) == X
+    @test LearnAPI.features(learner, data).features == Tables.matrix(X)'
 
     model = @test_logs(
         (:info, r"Trained 4 ridge"),

@@ -1,7 +1,7 @@
 """
     LearnTestAPI
 
-Module for testing implementations of the interfacde defined in
+Module for testing implementations of the interface defined in
 [LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/dev/).
 
 If your package defines an object `learner` implementing the interface, then put something
@@ -46,12 +46,14 @@ using LinearAlgebra
 using Random
 using Statistics
 using UnPack
+import LearnDataFrontEnds
 
 include("tools.jl")
 include("logging.jl")
 include("testapi.jl")
 include("learners/static_algorithms.jl")
 include("learners/regression.jl")
+include("learners/classification.jl")
 include("learners/ensembling.jl")
 # next learner excluded because of heavy dependencies:
 # include("learners/gradient_descent.jl")
