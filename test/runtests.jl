@@ -4,6 +4,7 @@ test_files = [
     "tools.jl",
     "learners/static_algorithms.jl",
     "learners/regression.jl",
+    "learners/classification.jl",
     "learners/ensembling.jl",
 #    "learners/gradient_descent.jl",
     "learners/incremental_algorithms.jl",

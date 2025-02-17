@@ -3,6 +3,7 @@ using LearnAPI
 using LearnTestAPI
 using StableRNGs
 using Statistics
+using LinearAlgebra
 
 # synthesize test data:
 rng = StableRNG(123)

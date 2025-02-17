@@ -211,7 +211,7 @@ LearnAPI.components(model::EnsembleFitted) = [:atom => model.models,]
 # - `out_of_sample_losses`
 
 # For simplicity, this implementation is restricted to univariate features. The simplistic
-# algorithm is explained in the docstring.  of the data presented.
+# algorithm is explained in the docstring.
 
 
 # ## HELPERS
@@ -276,6 +276,7 @@ function update!(
     stump = Stump(ξ, left, right)
     push!(forest, stump)
     new_predictions = _predict(stump, x)
+
     # efficient in-place update of `predictions`:
     predictions .= (k*predictions .+ new_predictions)/(k + 1)
     push!(training_losses, (predictions[training_indices] .- ytrain).^2 |> sum)
