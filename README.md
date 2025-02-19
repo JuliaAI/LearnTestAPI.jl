@@ -8,4 +8,4 @@ machine learning and statistics
 [![Build Status](https://github.com/JuliaAI/LearnTestAPI.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/LearnTestAPI.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaAI/LearnTestAPI.jl/graph/badge.svg?token=gCIQfDtzMt)](https://codecov.io/gh/JuliaAI/LearnTestAPI.jl)
  
-See [LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/stable/) for documentation. 
+Documentation is [here](https://juliaai.github.io/LearnAPI.jl/stable/testing_an_implementation/) (embedded in the [LearnAPI.jl](https://juliaai.github.io/LearnAPI.jl/stable/) documentation).
