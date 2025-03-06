@@ -29,7 +29,7 @@ additional observations post facto: The following is equivalent to `d2 =
 predict(NormalEstimator(), vcat(y, ynew))`:
 
 ```julia
-update_observations(model, ynew)
+model = update_observations(model, ynew)
 d2 = predict(model)
 ```
 
