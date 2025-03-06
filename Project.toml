@@ -1,7 +1,7 @@
 name = "LearnTestAPI"
 uuid = "3111ed91-c4f2-40e7-bb19-7f6c618409b8"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
