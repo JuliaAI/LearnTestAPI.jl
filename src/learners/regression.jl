@@ -28,12 +28,6 @@ LearnDataFrontEnds.jl.
 """
 Ridge(; lambda=0.1) = Ridge(lambda) # LearnAPI.constructor defined later
 
-struct RidgeFitObs{T,M<:AbstractArray{T}}
-    A::M  # p x n
-    names::Vector{Symbol}
-    y::Vector{T}
-end
-
 struct RidgeFitted{T,F}
     learner::Ridge
     coefficients::Vector{T}
@@ -42,10 +36,6 @@ struct RidgeFitted{T,F}
 end
 
 LearnAPI.learner(model::RidgeFitted) = model.learner
-
-Base.getindex(data::RidgeFitObs, I) =
-    RidgeFitObs(data.A[:,I], data.names, data.y[I])
-Base.length(data::RidgeFitObs) = length(data.y)
 
 # add a canned data front end; `obs` will return objects of type `FrontEnds.Obs`:
 const frontend = FrontEnds.Saffron(view=true)
