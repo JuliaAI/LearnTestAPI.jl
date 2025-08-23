@@ -10,7 +10,7 @@ y = rand(rng, 50);
 ynew = rand(rng, 10);
 
 learner = LearnTestAPI.NormalEstimator()
-@testapi learner y verbosity=0
+@testapi learner y verbosity=1
 
 @testset "NormalEstimator" begin
     model = fit(learner, y)

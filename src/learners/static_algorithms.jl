@@ -55,12 +55,12 @@ function LearnAPI.transform(learner::Selector, X)
     transform(model, X)
 end
 
-# note the necessity of overloading `is_static` (`fit` consumes no data):
+# note the necessity of overloading `kind_of` (because `fit` consumes no data):
 @trait(
     Selector,
     constructor = Selector,
+    kind_of = LearnAPI.Static(),
     tags = ("feature engineering",),
-    is_static = true,
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
@@ -127,11 +127,11 @@ function LearnAPI.transform(learner::FancySelector, X)
     transform(model, X)
 end
 
-# note the necessity of overloading `is_static` (`fit` consumes no data):
+# note the necessity of overloading `kind_of` (because `fit` consumes no data):
 @trait(
     FancySelector,
     constructor = FancySelector,
-    is_static = true,
+    kind_of = LearnAPI.Static(),
     tags = ("feature engineering",),
     functions = (
         :(LearnAPI.fit),

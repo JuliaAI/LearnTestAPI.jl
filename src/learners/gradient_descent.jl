@@ -1,5 +1,8 @@
 # THIS FILE IS NOT INCLUDED BUT EXISTS AS AN IMPLEMENTATION EXEMPLAR
 
+# TODO: This file should be updated after release of CategoricalDistributions 0.2 as
+# `classes` is deprecated there.
+
 # This file defines:
 # - `PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.default_rng())
 

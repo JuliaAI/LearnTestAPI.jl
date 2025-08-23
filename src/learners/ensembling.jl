@@ -490,8 +490,9 @@ function LearnAPI.update(
 
 end
 
-# needed, because model is supervised:
-LearnAPI.target(learner::StumpRegressor, observations) = last(observations)
+# training data deconstructors:
+LearnAPI.features(learner::StumpRegressor, data) = first(data)
+LearnAPI.target(learner::StumpRegressor, data) = last(data)
 
 LearnAPI.predict(model::StumpRegressorFitted, ::Point, x) =
     _predict(model.forest, x)

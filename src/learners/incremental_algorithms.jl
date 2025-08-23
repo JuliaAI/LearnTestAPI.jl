@@ -67,28 +67,28 @@ function LearnAPI.update_observations(model::NormalEstimatorFitted, ynew; verbos
     return NormalEstimatorFitted(Σy, ȳ, ss, n)
 end
 
-LearnAPI.features(::NormalEstimator, y) = nothing
 LearnAPI.target(::NormalEstimator, y) = y
 
-LearnAPI.predict(model::NormalEstimatorFitted, ::SingleDistribution) =
+LearnAPI.predict(model::NormalEstimatorFitted, ::Distribution) =
     Distributions.Normal(model.ȳ, sqrt(model.ss/model.n))
 LearnAPI.predict(model::NormalEstimatorFitted, ::Point) = model.ȳ
 function LearnAPI.predict(model::NormalEstimatorFitted, ::ConfidenceInterval)
-    d = predict(model, SingleDistribution())
+    d = predict(model, Distribution())
     return (quantile(d, 0.025), quantile(d, 0.975))
 end
 
 # for fit and predict in one line:
 LearnAPI.predict(::NormalEstimator, k::LearnAPI.KindOfProxy, y)  =
     predict(fit(NormalEstimator(), y), k)
-LearnAPI.predict(::NormalEstimator, y) = predict(NormalEstimator(), SingleDistribution(), y)
+LearnAPI.predict(::NormalEstimator, y) = predict(NormalEstimator(), Distribution(), y)
 
 LearnAPI.extras(model::NormalEstimatorFitted) = (μ=model.ȳ, σ=sqrt(model.ss/model.n))
 
 @trait(
     NormalEstimator,
     constructor = NormalEstimator,
-    kinds_of_proxy = (SingleDistribution(), Point(), ConfidenceInterval()),
+    kind_of = LearnAPI.Generative(),
+    kinds_of_proxy = (Distribution(), Point(), ConfidenceInterval()),
     tags = ("density estimation", "incremental algorithms"),
     is_pure_julia = true,
     human_name = "normal distribution estimator",
@@ -98,7 +98,6 @@ LearnAPI.extras(model::NormalEstimatorFitted) = (μ=model.ȳ, σ=sqrt(model.ss/
         :(LearnAPI.clone),
         :(LearnAPI.strip),
         :(LearnAPI.obs),
-        :(LearnAPI.features),
         :(LearnAPI.target),
         :(LearnAPI.predict),
         :(LearnAPI.update_observations),

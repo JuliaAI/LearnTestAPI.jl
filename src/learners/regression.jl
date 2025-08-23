@@ -1,7 +1,7 @@
 # This file defines:
 
-# - `Ridge(; lambda=0.1)`
-# - `BabyRidge(; lambda=0.1)`
+# - `Ridge(; lambda=0.1)` (uses canned data front end)
+# - `BabyRidge(; lambda=0.1)` (no data front end)
 
 using LearnAPI
 using Tables
@@ -150,11 +150,16 @@ end
 
 LearnAPI.learner(model::BabyRidgeFitted) = model.learner
 
+# training data deconstructors:
+LearnAPI.features(learner::BabyRidge, (X, y)) = X
+LearnAPI.target(learner::BabyRidge, (X, y)) = y
+
 LearnAPI.predict(model::BabyRidgeFitted, ::Point, Xnew) =
     Tables.matrix(Xnew)*model.coefficients
 
 LearnAPI.strip(model::BabyRidgeFitted) =
     BabyRidgeFitted(model.learner, model.coefficients, nothing)
+
 
 @trait(
     BabyRidge,
