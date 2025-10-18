@@ -46,7 +46,11 @@ LearnAPI.obs(model::RidgeFitted, data) = obs(model, data, frontend)
 LearnAPI.features(learner::Ridge, data) = LearnAPI.features(learner, data, frontend)
 LearnAPI.target(learner::Ridge, data) = LearnAPI.target(learner, data, frontend)
 
-function LearnAPI.fit(learner::Ridge, observations::FrontEnds.Obs; verbosity=1)
+function LearnAPI.fit(
+    learner::Ridge,
+    observations::FrontEnds.Obs;
+    verbosity=LearnAPI.default_verbosity(),
+    )
 
     # unpack hyperparameters and data:
     lambda = learner.lambda
@@ -130,7 +134,7 @@ struct BabyRidgeFitted{T,F}
     feature_importances::F
 end
 
-function LearnAPI.fit(learner::BabyRidge, data; verbosity=1)
+function LearnAPI.fit(learner::BabyRidge, data; verbosity=LearnAPI.default_verbosity())
 
     X, y = data
 

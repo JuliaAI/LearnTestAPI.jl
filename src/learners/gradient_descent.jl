@@ -111,7 +111,7 @@ point predictions with `predict(model, Point(), Xnew)`.
 
 # Warm restart options
 
-    update(model, newdata, :epochs=>n, other_replacements...; verbosity=1)
+    update(model, newdata, :epochs=>n, other_replacements...)
 
 If `Δepochs = n - perceptron.epochs` is non-negative, then return an updated model, with
 the weights and bias of the previously learned perceptron used as the starting state in
@@ -120,7 +120,7 @@ instead of the previous training data. Any other hyperparaameter `replacements` 
 adopted. If `Δepochs` is negative or not specified, instead return `fit(learner,
 newdata)`, where `learner=LearnAPI.clone(learner; epochs=n, replacements....)`.
 
-    update_observations(model, newdata, replacements...; verbosity=1)
+    update_observations(model, newdata, replacements...)
 
 Return an updated model, with the weights and bias of the previously learned perceptron
 used as the starting state in new gradient descent updates. Adopt any specified
@@ -197,7 +197,7 @@ LearnAPI.learner(model::PerceptronClassifierFitted) = model.learner
 function LearnAPI.fit(
     learner::PerceptronClassifier,
     observations::PerceptronClassifierObs;
-    verbosity=1,
+    verbosity=LearnAPI.default_verbosity(),
     )
 
     # unpack hyperparameters:
@@ -233,7 +233,7 @@ function LearnAPI.update_observations(
     model::PerceptronClassifierFitted,
     observations_new::PerceptronClassifierObs,
     replacements...;
-    verbosity=1,
+    verbosity=LearnAPI.default_verbosity(),
     )
 
     # unpack data:
@@ -265,7 +265,7 @@ function LearnAPI.update(
     model::PerceptronClassifierFitted,
     observations::PerceptronClassifierObs,
     replacements...;
-    verbosity=1,
+    verbosity=LearnAPI.default_verbosity(),
     )
 
     # unpack data:

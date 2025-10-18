@@ -36,7 +36,7 @@ Selector(; names=Symbol[]) =  Selector(names) # LearnAPI.constructor defined lat
 
 # `fit` consumes no observational data, does no "learning", and just returns a thinly
 # wrapped `learner` (to distinguish it from the learner in dispatch):
-LearnAPI.fit(learner::Selector; verbosity=1) = Ref(learner)
+LearnAPI.fit(learner::Selector; verbosity=LearnAPI.default_verbosity()) = Ref(learner)
 LearnAPI.learner(model::Base.RefValue{Selector}) = model[]
 
 function LearnAPI.transform(model::Base.RefValue{Selector}, X)
@@ -107,7 +107,8 @@ LearnAPI.learner(model::FancySelectorFitted) = model.learner
 rejected(model::FancySelectorFitted) = model.rejected
 
 # Here we are wrapping `learner` with a place-holder for the `rejected` feature names.
-LearnAPI.fit(learner::FancySelector; verbosity=1) = FancySelectorFitted(learner)
+LearnAPI.fit(learner::FancySelector; verbosity=LearnAPI.default_verbosity()) =
+    FancySelectorFitted(learner)
 
 # output the filtered table and add `rejected` field to model (mutatated!)
 function LearnAPI.transform(model::FancySelectorFitted, X)

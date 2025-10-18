@@ -44,7 +44,12 @@ LearnAPI.features(learner::ConstantClassifier, data) =
 LearnAPI.target(learner::ConstantClassifier, data) =
     LearnAPI.target(learner, data, front_end)
 
-function LearnAPI.fit(learner::ConstantClassifier, observations::FrontEnds.Obs; verbosity=1)
+function LearnAPI.fit(
+    learner::ConstantClassifier,
+    observations::FrontEnds.Obs;
+    verbosity=LearnAPI.default_verbosity(),
+    )
+
     y = observations.target # integer "codes"
     names = observations.names
     classes_seen = observations.classes_seen
