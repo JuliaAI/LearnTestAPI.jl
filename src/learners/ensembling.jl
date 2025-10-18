@@ -205,7 +205,7 @@ LearnAPI.components(model::EnsembleFitted) = [:atom => model.models,]
 # - `update`
 # - `predict` (`Point` predictions)
 # - `predictions` (returns predictions on all supplied data)
-# - `out_of_sample_indices` (articluates which data is the internal validation data)
+# - `out_of_sample_indices` (articulates which data is the internal validation data)
 # - `trees`
 # - `training_losses`
 # - `out_of_sample_losses`
