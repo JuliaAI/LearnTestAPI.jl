@@ -65,7 +65,11 @@ LearnAPI.obs(model::TruncatedSVDFitted, data) =
 LearnAPI.features(learner::TruncatedSVD, data) =
     LearnAPI.features(learner, data, FrontEnds.Tarragon())
 
-function LearnAPI.fit(learner::TruncatedSVD, observations::FrontEnds.Obs; verbosity=1)
+function LearnAPI.fit(
+    learner::TruncatedSVD,
+    observations::FrontEnds.Obs;
+    verbosity=LearnAPI.default_verbosity(),
+    )
 
     # unpack hyperparameters:
     codim = learner.codim

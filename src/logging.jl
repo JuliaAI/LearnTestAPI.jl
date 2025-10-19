@@ -8,7 +8,7 @@ const QUIET = "- specify `verbosity=1` if debugging"
 
 const CONSTRUCTOR = """
 
-    Testing that learner can be reconstructed from its constructors.
+    Testing that learner can be reconstructed from its constructor.
     [Reference](https://juliaai.github.io/LearnAPI.jl/dev/reference/#learners).
 
   """
@@ -34,23 +34,53 @@ const FUNCTIONS = """
   """
 const ERR_MISSINNG_OBLIGATORIES =
     "These obligatory functions are missing from the return value of "*
-    "`LearnAPI.functions(learner)`; "
+    "`LearnAPI.functions(learner)`: "
 
-const FUNCTIONS3 = """
 
-    Testing that `LearnAPI.functions(learner)` includes `:(LearnAPI.features).`
+
+const DECONSTRUCTORS = """
+
+    Checking that the data deconsructors (`features`, `target` and `weights`) have only
+    been implemented where appropriate, and looking for clues that some desirable
+    implementations have been forgotten.
 
   """
-const FUNCTIONS4 = """
+const WARN_GENERATIVE_NO_TARGET = """
 
-    Testing that `LearnAPI.functions(learner)` excludes `:(LearnAPI.features)`, as
-    `LearnAPI.is_static(learner)` is `true`.
+    Typically, when `LearnAPI.kind_of(learner)==LearnAPI.Generative()`, we expect
+    `LearnAPI.target` to be implemented. If you have implemented it, check you added
+    `:(LearnAPI.target)` to the tuple returned by `LearnAPI.functions(learner)`. If you
+    intentionally left it unimplemented, ignore this warning.
+
+  """
+const NO_DECONSTRUCTORS_FOR_STATIC = """
+
+    Since `LearnAPI.kind_of(learner)==LearnAPI.Static()`, we are checking that none of the
+    following are in the tuple returned by `LearnAPI.functions(learner)`:
+    `:(LearnAPI.features)`, `:(LearnAPI.target)`, `:(LearnAPI.weights)`, because there
+    is never training data to deconstruct.
+
+  """
+const WARN_DESCRIMINATIVE_NO_FEATURES = """
+
+    Typically, when `LearnAPI.kind_of(learner)==LearnAPI.Descriminative()`, we expect
+    `LearnAPI.features` to be implemented. If you have implemented it, check you added
+    `:(LearnAPI.features)` to the tuple returned by `LearnAPI.functions(learner)`. If you
+    intentionally left it unimplemented, ignore this warning.
+
+  """
+const WARN_DESCRIMINATIVE_NO_TARGET = """
+
+    Frequently, when `LearnAPI.kind_of(learner)==LearnAPI.Descriminative()`,
+    `LearnAPI.target` is also implemented. If you have implemented it, check you added
+    `:(LearnAPI.features)` to the tuple returned by `LearnAPI.functions(learner)`. If you
+    intentionally left it unimplemented, ignore this warning.
 
   """
 const TAGS = """
 
     Testing that `LearnAPI.tags(learner)` has correct form. List allowed tags with
-    `LearnAPII.tags()`.
+    `LearnAPI.tags()`.
 
   """
 const KINDS_OF_PROXY = """
@@ -62,14 +92,14 @@ const KINDS_OF_PROXY = """
   """
 const FIT_IS_STATIC = """
 
-    `LearnAPI.is_static(learner)` is `true`. Therefore attempting to call
-    `fit(learner)`.
+    `LearnAPI.kind_of(learner)==LearnAPI.Static()`. Therefore attempting to define
+    `model = fit(learner)`.
 
   """
 const FIT_IS_NOT_STATIC = """
 
-    Attempting to call `fit(learner, data)`. If you implemented `fit(learner)` instead,
-    then you need to arrange `LearnAPI.is_static(learner) == true`.
+    Attempting to define `model = fit(learner, data)`. If you implemented `fit(learner)`
+    instead, then you need to arrange `LearnAPI.kind_of(learner)==LearnAPI.Static()`.
 
   """
 const LEARNER = """
@@ -86,7 +116,7 @@ const FUNCTIONS2 = """
 
   """
 const ERR_MISSING_FUNCTIONS =
-    "The following overloaded functions are missing from the return value of"*
+    "The following implemented/overloaded functions are missing from the return value of"*
     "`LearnAPI.functions(learner)`: "
 
 const OBS = """
@@ -118,7 +148,9 @@ const PREDICT_HAS_NO_FEATURES = """
 
     Attempting to call `predict(model, kind)` for each `kind` in
     `LearnAPI.kinds_of_proxy(learner)`. (We are not providing `predict` with a data
-    argument because `features(obs(learner, data)) == nothing`).
+    argument because either `LearnAPI.kind_of(learner)==LearnAPI.Generative()`, or because
+    we presume `LearnAPI.features` is not implemented, as `:(LearnAPI.features)` is not in
+    the return value of LearnAPI.functions(learner)`.)
 
 
   """
@@ -256,14 +288,12 @@ const TRANSFORM_ON_SELECTIONS2 = """
   """
 const TARGET0 = """
 
-    Attempting to call `LearnAPI.target(learner, data)` (fallback returns
-    `last(data)`).
+    Attempting to call `LearnAPI.target(learner, data)`.
 
   """
 const TARGET = """
 
-    Attempting to call `LearnAPI.target(learner, observations)` (fallback returns
-    `last(observations)`).
+    Attempting to call `LearnAPI.target(learner, observations)`
 
   """
 const TARGET_SELECTIONS = """
@@ -311,7 +341,7 @@ const UPDATE = """
   """
 const ERR_STATIC_UPDATE = ErrorException(
     "`(LearnAPI.update)` is in `LearnAPI.functions(learner)` but "*
-        "`LearnAPI.is_static(learner)` is `true`. You cannot implement `update` "*
+        "`LearnAPI.kind_of(learner)==LearnAPI.Static()`. You cannot implement `update` "*
         "for static learners. "
 )
 const UPDATE_ITERATIONS = """

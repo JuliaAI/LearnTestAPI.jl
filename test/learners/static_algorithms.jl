@@ -9,7 +9,7 @@ import DataFrames
 
 learner = LearnTestAPI.Selector(names=[:x, :w])
 X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
-@testapi learner X verbosity=1
+@testapi learner X verbosity=0
 
 @testset "test a static transformer" begin
     model = fit(learner) # no data arguments!
@@ -23,7 +23,7 @@ end
 
 learner = LearnTestAPI.FancySelector(names=[:x, :w])
 X = DataFrames.DataFrame(rand(3, 4), [:x, :y, :z, :w])
-@testapi learner X verbosity=1
+@testapi learner X verbosity=0
 
 @testset "test a variation that reports byproducts" begin
     model = fit(learner) # no data arguments!

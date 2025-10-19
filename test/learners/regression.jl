@@ -20,7 +20,7 @@ data = (X, y)
 # # RIDGE
 
 learner = LearnTestAPI.Ridge(lambda=0.5)
-@testapi learner data verbosity=1
+@testapi learner data verbosity=0
 
 @testset "extra tests for ridge regressor" begin
     @test :(LearnAPI.obs) in LearnAPI.functions(learner)

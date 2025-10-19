@@ -60,14 +60,17 @@ hyperparameter settings, are explicitly tested.
 
 Each `dataset` is used as follows.
 
-If `LearnAPI.is_static(learner) == false`, then:
+Assuming [`LearnAPI.kind_of(learner)`](@ref) returns [`LearnAPI.Descriminative()`](@ref)
+or [`LearnAPI.Generative()`](@ref):
 
 - `dataset` is passed to `fit` and, if necessary, its `update` cousins
 
-- If `X = LearnAPI.features(learner, dataset) == nothing`, then `predict` and/or
-  `transform` are called with no data. Otherwise, they are called with `X`.
+- In the `Generative()` case, `predict` and/or `transform` are called without a data
+  argument; in the `Descriminative()` case these methods are called with the data argument
+  ` X = LearnAPI.features(learner, dataset)`, assuming `:features in
+  LearnAPI.functions(learner)`, and are otherwise not called.
 
-If instead `LearnAPI.is_static(learner) == true`, then `fit` and its cousins are called
+If instead `LearnAPI.kind_of(learner) == Static()`, then `fit` and its cousins are called
 without any data, and `dataset` is passed directly to `predict` and/or `transform`.
 
 """
@@ -87,7 +90,8 @@ macro testapi(learner, data...)
         verbosity=$verbosity
         _human_name = LearnAPI.human_name(learner)
         _data_interface = LearnAPI.data_interface(learner)
-        _is_static = LearnAPI.is_static(learner)
+        _is_static = LearnAPI.kind_of(learner) == LearnAPI.Static()
+        _is_generative = LearnAPI.kind_of(learner) == LearnAPI.Generative()
 
         if isnothing(verbosity) || verbosity > 0
             @info "------ running @testapi - $_human_name "*$LOUD
@@ -124,13 +128,21 @@ macro testapi(learner, data...)
             end
         end
 
-        if !_is_static
-            @logged_testset $FUNCTIONS3 verbosity begin
-                Test.@test :(LearnAPI.features) in _functions
-            end
-        else
-            @logged_testset $FUNCTIONS4 verbosity begin
-                Test.@test !(:(LearnAPI.features) in _functions)
+        _has_features = :(LearnAPI.features) in _functions
+        _has_target = :(LearnAPI.target) in _functions
+        _has_weights = :(LearnAPI.weights) in _functions
+
+        @logged_testset $DECONSTRUCTORS verbosity begin
+             if _is_generative
+                !_has_target && verbosity > 0 && @warn $WARN_GENERATIVE_NO_TARGET
+                Test.@test !_has_features
+            elseif _is_static
+                @logged_testset $NO_DECONSTRUCTORS_FOR_STATIC verbosity begin
+                    Test.@test !_has_target && !_has_features && !_has_weights
+                end
+            else
+                !_has_features && verbosity > 0 && @warn $WARN_DESCRIMINATIVE_NO_FEATURES
+                !_has_features && verbosity > 0 && @warn $WARN_DESCRIMINATIVE_NO_TARGET
             end
         end
 
@@ -199,13 +211,15 @@ macro testapi(learner, data...)
 
             X = if _is_static
                 data
-            else
+            elseif _has_features
                 @logged_testset $FEATURES0 verbosity begin
                     LearnAPI.features(learner, data)
                 end
                 @logged_testset $FEATURES verbosity begin
                     LearnAPI.features(learner, observations)
                 end
+            else
+                nothing
             end
 
             if !(isnothing(X))
@@ -467,24 +481,17 @@ macro testapi(learner, data...)
 
             # weights
 
-            _w = @logged_testset $WEIGHTS verbosity begin
-                LearnAPI.weights(learner, observations)
-            end
-
-            if !(isnothing(_w))
-                @logged_testset $WEIGHTS_IN_FUNCTIONS verbosity begin
-                    Test.@test :(LearnAPI.weights) in _functions
+            if :(LearnAPI.weights) in _functions
+                _w = @logged_testset $WEIGHTS verbosity begin
+                    LearnAPI.weights(learner, observations)
                 end
+
                 w = @logged_testset $WEIGHTS_SELECTIONS verbosity begin
                     LearnTestAPI.learner_get(
                         learner,
                         data,
                         data->LearnAPI.weights(learner, data),
                     )
-                end
-            else
-                @logged_testset $WEIGHTS_NOT_IN_FUNCTIONS verbosity begin
-                    Test.@test !(:(LearnAPI.weights) in _functions)
                 end
             end
 
@@ -612,7 +619,7 @@ macro testapi(learner, data...)
 
             # traits
             # `constructor`,  `functions`, `kinds_of_proxy`, `tags`, `nonlearners`,
-            # `iteration_parameter`, `data_interface`, `is_static` tested already above
+            # `iteration_parameter`, `data_interface`, `kind_of` tested already above
 
             @logged_testset $PKG_NAME verbosity begin
                 pkg_name = LearnAPI.pkg_name(learner)
@@ -686,3 +693,4 @@ macro testapi(learner, data...)
         nothing
     end # quote
 end # macro
+

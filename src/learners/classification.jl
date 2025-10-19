@@ -24,7 +24,7 @@ struct ConstantClassifierFitted
     learner::ConstantClassifier
     probabilities
     names::Vector{Symbol}
-    classes_seen
+    levels_seen
     codes_seen
     decoder
 end
@@ -44,10 +44,15 @@ LearnAPI.features(learner::ConstantClassifier, data) =
 LearnAPI.target(learner::ConstantClassifier, data) =
     LearnAPI.target(learner, data, front_end)
 
-function LearnAPI.fit(learner::ConstantClassifier, observations::FrontEnds.Obs; verbosity=1)
+function LearnAPI.fit(
+    learner::ConstantClassifier,
+    observations::FrontEnds.Obs;
+    verbosity=LearnAPI.default_verbosity(),
+    )
+
     y = observations.target # integer "codes"
     names = observations.names
-    classes_seen = observations.classes_seen
+    levels_seen = observations.levels_seen
     codes_seen = sort(unique(y))
     decoder = observations.decoder
 
@@ -59,7 +64,7 @@ function LearnAPI.fit(learner::ConstantClassifier, observations::FrontEnds.Obs; 
         learner,
         probabilities,
         names,
-        classes_seen,
+        levels_seen,
         codes_seen,
         decoder,
     )
@@ -89,7 +94,7 @@ function LearnAPI.predict(
     probs = model.probabilities
     # repeat vertically to get rows of a matrix:
     probs_matrix = reshape(repeat(probs, n), (length(probs), n))'
-    return CategoricalDistributions.UnivariateFinite(model.classes_seen, probs_matrix)
+    return CategoricalDistributions.UnivariateFinite(model.levels_seen, probs_matrix)
 end
 LearnAPI.predict(model::ConstantClassifierFitted, ::Distribution, data) =
         predict(model, Distribution(), obs(model, data))

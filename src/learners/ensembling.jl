@@ -69,7 +69,7 @@ LearnAPI.obs(model::EnsembleFitted, data) = LearnAPI.obs(first(model.models), da
 LearnAPI.target(learner::Ensemble, data) = LearnAPI.target(learner.atom, data)
 LearnAPI.features(learner::Ensemble, data) = LearnAPI.features(learner.atom, data)
 
-function LearnAPI.fit(learner::Ensemble, data; verbosity=1)
+function LearnAPI.fit(learner::Ensemble, data; verbosity=LearnAPI.default_verbosity())
 
     # unpack hyperparameters:
     atom = learner.atom
@@ -112,7 +112,7 @@ function LearnAPI.update(
     model::EnsembleFitted,
     data,
     replacements::Pair{Symbol}...;
-    verbosity=1,
+    verbosity=LearnAPI.default_verbosity(),
     )
     learner_old = LearnAPI.learner(model)
     learner = LearnAPI.clone(learner_old, replacements...)
@@ -205,7 +205,7 @@ LearnAPI.components(model::EnsembleFitted) = [:atom => model.models,]
 # - `update`
 # - `predict` (`Point` predictions)
 # - `predictions` (returns predictions on all supplied data)
-# - `out_of_sample_indices` (articluates which data is the internal validation data)
+# - `out_of_sample_indices` (articulates which data is the internal validation data)
 # - `trees`
 # - `training_losses`
 # - `out_of_sample_losses`
@@ -361,7 +361,7 @@ struct StumpRegressorFitted
     rng
 end
 
-function LearnAPI.fit(learner::StumpRegressor, data; verbosity=1)
+function LearnAPI.fit(learner::StumpRegressor, data; verbosity=LearnAPI.default_verbosity())
 
     x, y = data
     rng = deepcopy(learner.rng)
@@ -426,7 +426,7 @@ function LearnAPI.update(
     model::StumpRegressorFitted,
     data, # ignored as cached
     replacements::Pair{Symbol}...;
-    verbosity=1,
+    verbosity=LearnAPI.default_verbosity(),
     )
 
     learner_old = LearnAPI.learner(model)
@@ -490,8 +490,9 @@ function LearnAPI.update(
 
 end
 
-# needed, because model is supervised:
-LearnAPI.target(learner::StumpRegressor, observations) = last(observations)
+# training data deconstructors:
+LearnAPI.features(learner::StumpRegressor, data) = first(data)
+LearnAPI.target(learner::StumpRegressor, data) = last(data)
 
 LearnAPI.predict(model::StumpRegressorFitted, ::Point, x) =
     _predict(model.forest, x)

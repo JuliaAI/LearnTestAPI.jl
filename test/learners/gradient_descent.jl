@@ -44,7 +44,7 @@ learner =
 
 @testapi learner (X, y) verbosity=0 # use verbosity=1 to debug
 
-@testset "extra tests for perceptron classfier" begin
+@testset "extra tests for perceptron classifier" begin
     model40 = fit(learner, (Xtrain, ytrain); verbosity=0)
 
     # 40 epochs is sufficient for 90% accuracy in this case:
