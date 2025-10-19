@@ -1,8 +1,5 @@
 # THIS FILE IS NOT INCLUDED BUT EXISTS AS AN IMPLEMENTATION EXEMPLAR
 
-# TODO: This file should be updated after release of CategoricalDistributions 0.2 as
-# `classes` is deprecated there.
-
 # This file defines:
 # - `PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.default_rng())
 
@@ -13,6 +10,7 @@ using StableRNGs
 import Optimisers
 import Zygote
 import NNlib
+import CategoricalArrays
 import CategoricalDistributions
 import CategoricalDistributions: pdf, mode
 import ComponentArrays
@@ -58,7 +56,7 @@ for the specified number of `epochs`.
 - `perceptron`: component array with components `weights` and `bias`
 - `optimiser`: optimiser from Optimiser.jl
 - `X`: feature matrix, of size `(p, n)`
-- `y_hot`: one-hot encoded target, of size `(nclasses, n)`
+- `y_hot`: one-hot encoded target, of size `(nlevels, n)`
 - `epochs`: number of epochs
 - `state`: optimiser state
 
@@ -135,23 +133,23 @@ PerceptronClassifier(; epochs=50, optimiser=Optimisers.Adam(), rng=Random.defaul
 struct PerceptronClassifierObs
     X::Matrix{Float32}
     y_hot::BitMatrix  # one-hot encoded target
-    classes           # the (ordered) pool of `y`, as `CategoricalValue`s
+    levels           # the (ordered) pool of `y`, as `CategoricalValue`s
 end
 
 # For pre-processing the training data:
 function LearnAPI.obs(::PerceptronClassifier, data::Tuple)
     X, y = data
-    classes = CategoricalDistributions.classes(y)
-    y_hot = classes .== permutedims(y) # one-hot encoding
-    return PerceptronClassifierObs(X, y_hot, classes)
+    levels = CategoricalArrays.levels(y)
+    y_hot = levels .== permutedims(y) # one-hot encoding
+    return PerceptronClassifierObs(X, y_hot, levels)
 end
 LearnAPI.obs(::PerceptronClassifier, observations::PerceptronClassifierObs) =
     observations # involutivity
 
 # helper:
-function decode(y_hot, classes)
+function decode(y_hot, levels)
     n = size(y_hot, 2)
-    [only(classes[y_hot[:,i]]) for i in 1:n]
+    [only(levels[y_hot[:,i]]) for i in 1:n]
 end
 
 # implement `RadomAccess()` interface for output of `obs`:
@@ -159,14 +157,14 @@ Base.length(observations::PerceptronClassifierObs) = size(observations.y_hot, 2)
 Base.getindex(observations::PerceptronClassifierObs, I) = PerceptronClassifierObs(
     observations.X[:, I],
     observations.y_hot[:, I],
-    observations.classes,
+    observations.levels,
 )
 
 # training data deconstructors:
 LearnAPI.target(
     learner::PerceptronClassifier,
     observations::PerceptronClassifierObs,
-) = decode(observations.y_hot, observations.classes)
+) = decode(observations.y_hot, observations.levels)
 LearnAPI.target(learner::PerceptronClassifier, data) =
     LearnAPI.target(learner, obs(learner, data))
 LearnAPI.features(
@@ -187,7 +185,7 @@ struct PerceptronClassifierFitted
     learner::PerceptronClassifier
     perceptron  # component array storing weights and bias
     state       # optimiser state
-    classes     # target classes
+    levels     # target levels
     losses
 end
 
@@ -208,12 +206,12 @@ function LearnAPI.fit(
     # unpack data:
     X = observations.X
     y_hot = observations.y_hot
-    classes = observations.classes
-    nclasses = length(classes)
+    levels = observations.levels
+    nlevels = length(levels)
 
     # initialize bias and weights:
-    weights = randn(rng, Float32, nclasses, p)
-    bias = zeros(Float32, nclasses)
+    weights = randn(rng, Float32, nlevels, p)
+    bias = zeros(Float32, nlevels)
     perceptron = (; weights, bias) |> ComponentArrays.ComponentArray
 
     # initialize optimiser:
@@ -221,7 +219,7 @@ function LearnAPI.fit(
 
     perceptron, state, losses = corefit(perceptron, X, y_hot, epochs, state, verbosity)
 
-    return PerceptronClassifierFitted(learner, perceptron, state, classes, losses)
+    return PerceptronClassifierFitted(learner, perceptron, state, levels, losses)
 end
 
 # `fit` for unprocessed data:
@@ -239,10 +237,10 @@ function LearnAPI.update_observations(
     # unpack data:
     X = observations_new.X
     y_hot = observations_new.y_hot
-    classes = observations_new.classes
-    nclasses = length(classes)
+    levels = observations_new.levels
+    nlevels = length(levels)
 
-    classes == model.classes || error("New training target has incompatible classes.")
+    levels == model.levels || error("New training target has incompatible levels.")
 
     learner_old = LearnAPI.learner(model)
     learner = LearnAPI.clone(learner_old, replacements...)
@@ -255,7 +253,7 @@ function LearnAPI.update_observations(
     perceptron, state, losses_new = corefit(perceptron, X, y_hot, epochs, state, verbosity)
     losses = vcat(losses, losses_new)
 
-    return PerceptronClassifierFitted(learner, perceptron, state, classes, losses)
+    return PerceptronClassifierFitted(learner, perceptron, state, levels, losses)
 end
 LearnAPI.update_observations(model::PerceptronClassifierFitted, data, args...; kwargs...) =
     update_observations(model, obs(LearnAPI.learner(model), data), args...; kwargs...)
@@ -271,10 +269,10 @@ function LearnAPI.update(
     # unpack data:
     X = observations.X
     y_hot = observations.y_hot
-    classes = observations.classes
-    nclasses = length(classes)
+    levels = observations.levels
+    nlevels = length(levels)
 
-    classes == model.classes || error("New training target has incompatible classes.")
+    levels == model.levels || error("New training target has incompatible levels.")
 
     learner_old = LearnAPI.learner(model)
     learner = LearnAPI.clone(learner_old, replacements...)
@@ -292,7 +290,7 @@ function LearnAPI.update(
         corefit(perceptron, X, y_hot, Δepochs, state, verbosity)
     losses = vcat(losses, losses_new)
 
-    return PerceptronClassifierFitted(learner, perceptron, state, classes, losses)
+    return PerceptronClassifierFitted(learner, perceptron, state, levels, losses)
 end
 LearnAPI.update(model::PerceptronClassifierFitted, data, args...; kwargs...) =
     update(model, obs(LearnAPI.learner(model), data), args...; kwargs...)
@@ -302,9 +300,9 @@ LearnAPI.update(model::PerceptronClassifierFitted, data, args...; kwargs...) =
 
 function LearnAPI.predict(model::PerceptronClassifierFitted, ::Distribution, Xnew)
     perceptron = model.perceptron
-    classes = model.classes
+    levels = model.levels
     probs = perceptron.weights*Xnew .+ perceptron.bias |> NNlib.softmax
-    return CategoricalDistributions.UnivariateFinite(classes, probs')
+    return CategoricalDistributions.UnivariateFinite(levels, probs')
 end
 
 LearnAPI.predict(model::PerceptronClassifierFitted, ::Point, Xnew) =
