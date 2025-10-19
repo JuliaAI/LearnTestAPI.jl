@@ -36,7 +36,7 @@ Selector(; names=Symbol[]) =  Selector(names) # LearnAPI.constructor defined lat
 
 # `fit` consumes no observational data, does no "learning", and just returns a thinly
 # wrapped `learner` (to distinguish it from the learner in dispatch):
-LearnAPI.fit(learner::Selector; verbosity=1) = Ref(learner)
+LearnAPI.fit(learner::Selector; verbosity=LearnAPI.default_verbosity()) = Ref(learner)
 LearnAPI.learner(model::Base.RefValue{Selector}) = model[]
 
 function LearnAPI.transform(model::Base.RefValue{Selector}, X)
@@ -55,12 +55,12 @@ function LearnAPI.transform(learner::Selector, X)
     transform(model, X)
 end
 
-# note the necessity of overloading `is_static` (`fit` consumes no data):
+# note the necessity of overloading `kind_of` (because `fit` consumes no data):
 @trait(
     Selector,
     constructor = Selector,
+    kind_of = LearnAPI.Static(),
     tags = ("feature engineering",),
-    is_static = true,
     functions = (
         :(LearnAPI.fit),
         :(LearnAPI.learner),
@@ -107,7 +107,8 @@ LearnAPI.learner(model::FancySelectorFitted) = model.learner
 rejected(model::FancySelectorFitted) = model.rejected
 
 # Here we are wrapping `learner` with a place-holder for the `rejected` feature names.
-LearnAPI.fit(learner::FancySelector; verbosity=1) = FancySelectorFitted(learner)
+LearnAPI.fit(learner::FancySelector; verbosity=LearnAPI.default_verbosity()) =
+    FancySelectorFitted(learner)
 
 # output the filtered table and add `rejected` field to model (mutatated!)
 function LearnAPI.transform(model::FancySelectorFitted, X)
@@ -127,11 +128,11 @@ function LearnAPI.transform(learner::FancySelector, X)
     transform(model, X)
 end
 
-# note the necessity of overloading `is_static` (`fit` consumes no data):
+# note the necessity of overloading `kind_of` (because `fit` consumes no data):
 @trait(
     FancySelector,
     constructor = FancySelector,
-    is_static = true,
+    kind_of = LearnAPI.Static(),
     tags = ("feature engineering",),
     functions = (
         :(LearnAPI.fit),

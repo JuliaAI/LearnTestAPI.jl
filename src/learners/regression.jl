@@ -1,7 +1,7 @@
 # This file defines:
 
-# - `Ridge(; lambda=0.1)`
-# - `BabyRidge(; lambda=0.1)`
+# - `Ridge(; lambda=0.1)` (uses canned data front end)
+# - `BabyRidge(; lambda=0.1)` (no data front end)
 
 using LearnAPI
 using Tables
@@ -46,7 +46,11 @@ LearnAPI.obs(model::RidgeFitted, data) = obs(model, data, frontend)
 LearnAPI.features(learner::Ridge, data) = LearnAPI.features(learner, data, frontend)
 LearnAPI.target(learner::Ridge, data) = LearnAPI.target(learner, data, frontend)
 
-function LearnAPI.fit(learner::Ridge, observations::FrontEnds.Obs; verbosity=1)
+function LearnAPI.fit(
+    learner::Ridge,
+    observations::FrontEnds.Obs;
+    verbosity=LearnAPI.default_verbosity(),
+    )
 
     # unpack hyperparameters and data:
     lambda = learner.lambda
@@ -130,7 +134,7 @@ struct BabyRidgeFitted{T,F}
     feature_importances::F
 end
 
-function LearnAPI.fit(learner::BabyRidge, data; verbosity=1)
+function LearnAPI.fit(learner::BabyRidge, data; verbosity=LearnAPI.default_verbosity())
 
     X, y = data
 
@@ -150,11 +154,16 @@ end
 
 LearnAPI.learner(model::BabyRidgeFitted) = model.learner
 
+# training data deconstructors:
+LearnAPI.features(learner::BabyRidge, (X, y)) = X
+LearnAPI.target(learner::BabyRidge, (X, y)) = y
+
 LearnAPI.predict(model::BabyRidgeFitted, ::Point, Xnew) =
     Tables.matrix(Xnew)*model.coefficients
 
 LearnAPI.strip(model::BabyRidgeFitted) =
     BabyRidgeFitted(model.learner, model.coefficients, nothing)
+
 
 @trait(
     BabyRidge,

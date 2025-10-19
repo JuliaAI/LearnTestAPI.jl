@@ -45,7 +45,7 @@ f = @formula(t ~ c + a)
 # # TESTS
 
 learner = LearnTestAPI.ConstantClassifier()
-@testapi learner (X1, y)
+@testapi learner (X1, y) verbosity=0
 @testapi learner (X2, y) (X3, y) (X4, y) (T1, :t) (T2, :t) (T3, f) (T4, f) verbosity=0
 
 @testset "extra tests for constant classifier" begin
