@@ -110,7 +110,7 @@ rejected(model::FancySelectorFitted) = model.rejected
 LearnAPI.fit(learner::FancySelector; verbosity=LearnAPI.default_verbosity()) =
     FancySelectorFitted(learner)
 
-# output the filtered table and add `rejected` field to model (mutatated!)
+# output the filtered table and add `rejected` field to model (mutated!)
 function LearnAPI.transform(model::FancySelectorFitted, X)
     table = Tables.columntable(X)
     names = Tables.columnnames(table)
