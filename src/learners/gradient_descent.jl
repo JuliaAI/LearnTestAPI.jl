@@ -125,7 +125,7 @@ replacement for :epochs is specified, or `Δepochs` is negative, instead return
 Return an updated model, with the weights and bias of the previously learned perceptron
 used as the starting state in new gradient descent updates. Adopt any specified
 hyperparameter `replacements` (properties of `LearnAPI.learner(model)`). Exactly `n` new
-epochs are applied, where `n = model.epochs` unless this explictly changed in
+epochs are applied, where `n = model.epochs` unless this explicitly changed in
 `replacements`.
 
 """

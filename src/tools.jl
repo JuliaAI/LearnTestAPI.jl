@@ -90,7 +90,7 @@ learner_get(learner, data, apply=identity) =
     get(learner, data, LearnAPI.data_interface(learner), apply)
 
 """
-    model_get(model, data)
+    model_get(model, data; apply=identity)
 
 *Private method.*
 
